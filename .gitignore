@@ -1,0 +1,18 @@
+# 依赖与构建产物
+node_modules/
+dist/
+
+# 开发期临时文件（自测页、调试页、检查脚本、测试素材）
+_*.html
+_*.js
+_*.txt
+_bench/
+GonCeng/
+
+# 系统与编辑器
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.log

@@ -1,0 +1,29 @@
+{
+  "name": "time-stretch",
+  "productName": "时间拉伸",
+  "version": "2.0.0",
+  "description": "Anton Repponen 风格化工具 —— 把图片框选区域按居中像素列横向拉伸",
+  "main": "main.js",
+  "author": "TheLiangSui",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheLiangSui/time-stretch.git"
+  },
+  "homepage": "https://theliangsui.github.io/time-stretch/",
+  "bugs": {
+    "url": "https://github.com/TheLiangSui/time-stretch/issues"
+  },
+  "scripts": {
+    "start": "electron .",
+    "icon": "node dev/make-icon.js",
+    "build": "node dev/build-portable.js",
+    "build:packager": "node dev/make-icon.js && electron-packager . 时间拉伸 --platform=win32 --arch=x64 --out=dist --overwrite --asar --icon=icon.ico --app-version=2.0.0 --ignore=\"^/dev($|/)\" --ignore=\"^/docs($|/)\" --ignore=\"^/dist($|/)\"",
+    "test": "node dev/selftest-gen.js && node dev/selftest-run.js _selftest.html"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^44.7.2",
+    "resedit": "^2.0.3"
+  }
+}
