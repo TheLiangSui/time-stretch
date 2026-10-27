@@ -17,10 +17,12 @@
 | 版本 | 怎么用 | 说明 |
 |---|---|---|
 | 🌐 **网页版** | 打开 [theliangsui.github.io/time-stretch](https://theliangsui.github.io/time-stretch/) | 打开即用，无需安装、不加载任何外部资源。单文件，也可以下载 `index.html` 双击本地打开 |
-| 🖥 **Windows 桌面版** | [Releases](https://github.com/TheLiangSui/time-stretch/releases/latest) 下载 `时间拉伸-v2.0.0-win32-x64.zip` → **解压整个文件夹** → 双击 `时间拉伸.exe` | 免安装绿色版。多出原生「另存为」对话框、默认目录记忆、原生菜单 |
+| 🖥 **Windows 桌面版** | [Releases](https://github.com/TheLiangSui/time-stretch/releases/latest) 下载 `TimeStretch-v2.0.0-win32-x64.zip` → **解压整个文件夹** → 双击 `TimeStretch.exe` | 免安装绿色版。多出原生「另存为」对话框、默认目录记忆、原生菜单 |
 
-> ⚠️ 桌面版**必须解压后整个文件夹放在一起**运行。`时间拉伸.exe` 依赖同目录的 Electron 运行时，单独把 exe 拖出来会打不开。
+> ⚠️ 桌面版**必须解压后整个文件夹放在一起**运行。`TimeStretch.exe` 依赖同目录的 Electron 运行时，单独把 exe 拖出来会打不开。
 > 想放桌面就给它建快捷方式。
+>
+> 首次运行 Windows 可能弹「Windows 已保护你的电脑」—— 这是未做代码签名的正常提示。点**更多信息 → 仍要运行**即可。
 
 两个版本共用**同一份 `index.html`**，功能完全一致。
 
@@ -93,6 +95,8 @@ npm start                         # 不打包，直接以 Electron 调试
 
 `dev/build-portable.js` 不走 electron-packager：`node_modules/electron/dist` 里已经有解压好的运行时，用 `robocopy` 直接拷过去 0.1 秒完事，再用纯 JS 的 `resedit` 把图标和版本信息写进 PE。相比标准打包的「解压 157MB → 再拷 368MB」快两个数量级。
 
+> **发行包为什么把 exe 叫 `TimeStretch.exe`**：ZIP 的文件名编码没有强制标准，Windows 资源管理器不认 UTF-8 标志位（bit 11），只会按系统 ANSI 代码页解码。中文名在中文系统上正常、在英文系统上必乱码，反过来也一样。发行包里顶层目录和 exe 统一用 ASCII，任何系统任何解压工具都不会出岔子 —— 应用界面上仍然是「时间拉伸」。本地构建产物保持 `时间拉伸.exe`，两者只是命名不同。
+
 ### 自测
 
 320 条断言，覆盖取样位置、方块分组、调色、撤销、图层栈、下拉 / 弹窗 / 缩放条等 UI 行为，用本机 Edge 无头模式跑：
@@ -129,10 +133,16 @@ docs/技术规格.md     完整技术规格 + 逐版本迭代修复记录
 Release 页同时提供 `SHA256SUMS.txt`。Windows 上校验：
 
 ```powershell
-Get-FileHash .\时间拉伸-v2.0.0-win32-x64.zip -Algorithm SHA256
+Get-FileHash .\TimeStretch-v2.0.0-win32-x64.zip -Algorithm SHA256
 ```
 
-输出应与 `SHA256SUMS.txt` 中对应行一致。不一致说明下载被截断或损坏，重新下载。
+当前版本应为：
+
+```
+00c481f70582d616e315192d427d51a2921046e9e3425c64d8c9e6add05eafcf
+```
+
+不一致说明下载被截断或损坏，重新下载。
 
 ---
 
