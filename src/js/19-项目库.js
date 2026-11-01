@@ -177,7 +177,7 @@ function newProject(){
   S.undoStack = []; S.redoStack = [];
   S.src = { canvas:null, ctx:null, w:0, h:0, name:'', version: S.src.version + 1 };
   hint.classList.remove('hide');
-  ['btnExport','btnGrid','btnGridRe','btnRandBox','btnRandAll','btnRandOrder'].forEach(function(id){
+  ['btnExport','btnTile','btnTileRe','btnRandAll','btnRandOrder'].forEach(function(id){
     const el = $(id);
     if (el) el.disabled = true;
   });

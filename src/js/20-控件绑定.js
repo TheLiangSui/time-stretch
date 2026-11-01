@@ -34,9 +34,8 @@ $('btn100').onclick = function(){
 $('zIn').onclick = function(){ zoomCenter(1.2); renderAll(); };
 $('zOut').onclick = function(){ zoomCenter(1/1.2); renderAll(); };
 $('zFit').onclick = function(){ fitView(); renderAll(); };
-$('btnGrid').onclick = makeGrid;
-$('btnGridRe').onclick = makeGrid;
-$('btnRandBox').onclick = doRandomBox;
+$('btnTile').onclick = doTiling;
+$('btnTileRe').onclick = doTiling;
 $('btnClear').onclick = clearAll;
 $('btnImg').onclick = function(){
   if (!S.src.canvas){ toast('先导入主图'); return; }
@@ -71,13 +70,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.modal [data-close]'), f
   b.onclick = function(){ const m = b.closest('.modal'); if (m) m.classList.remove('show'); };
 });
 $('srcVisible').onchange = function(){ S.showSrc = this.checked; render(); };
-/* 静态面板的四个数值行：源图不透明度、随机强度走模型，网格两参数由 makeGrid 现读 */
+/* 静态面板的数值行：源图不透明度、随机强度走模型；铺框两个参数由 doTiling 现读 */
 bindNum('srcOpacity', function(v){ S.srcOpacity = v/100; });
 bindNum('randStr',   function(v){ S.randStrength = v; });
-bindNum('gridJit',   function(){});
-bindNum('gridOv',    function(){});
-bindNum('gridC',     function(){});
-bindNum('gridR',     function(){});
+bindNum('tileN',     function(){});
+bindNum('tileVar',   function(){});
 bindAllScrubs(document);
 $('btnRandAll').onclick = randomizeAll;
 $('btnRandOrder').onclick = reseedAll;

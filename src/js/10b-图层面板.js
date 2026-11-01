@@ -87,7 +87,7 @@ function makeGroupRow(g){
     } }
   }, icon(g.visible ? 'i-eye' : 'i-eyeoff', 'ic-s'));
 
-  const row = h('div', { class: 'li grp-row' + (allSel ? ' sel' : '') },
+  const row = h('div', { class: 'li grp-row' + (allSel ? ' sel' : ''), draggable: 'true' },
     tog,
     h('span', { class: 'gico' }, icon('i-group', 'ic-s')),
     h('span', { class: 'txt' },
@@ -96,6 +96,31 @@ function makeGroupRow(g){
     eye);
 
   row._G = g;
+
+  /* 组头和普通行一样能拖 —— 拖的是整组，落点是另一组的整块或某个单层 */
+  row.addEventListener('dragstart', function(e){
+    dragIds = members.map(function(L){ return L.id; });
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', 'g:' + g.id); } catch(_){}
+  });
+  row.addEventListener('dragend', function(){ dragIds = null; clearDropMarks(); renderLayerList(); });
+  row.addEventListener('dragover', function(e){
+    if (!dragIds) return;
+    if (members.some(function(L){ return dragIds.indexOf(L.id) >= 0; })) return;
+    e.preventDefault(); clearDropMarks();
+    const r = row.getBoundingClientRect();
+    row.classList.add((e.clientY - r.top) > r.height/2 ? 'dropafter' : 'dropbefore');
+  });
+  row.addEventListener('drop', function(e){
+    if (!dragIds) return;
+    if (members.some(function(L){ return dragIds.indexOf(L.id) >= 0; })) return;
+    e.preventDefault(); e.stopPropagation();
+    const r = row.getBoundingClientRect();
+    moveBlockRelative(dragIds, { gid: g.id }, (e.clientY - r.top) > r.height/2);
+    dragIds = null; clearDropMarks();
+  });
+
   row.addEventListener('click', function(e){
     if (e.ctrlKey || e.metaKey || e.shiftKey){
       members.forEach(function(L){ if (!isSel(L.id)) S.selIds.push(L.id); });
@@ -205,8 +230,13 @@ function makeLayerRow(L, g){
     lk, eye);
 
   row._L = L;
-  /* 点击 = 单选；Ctrl / Shift + 点击 = 增减选 */
+  /* 点击 = 单选（同时记下范围锚点）
+     Shift + 点击 = 从锚点到这一行全选
+     Ctrl / ⌘ + 点击 = 逐个加减 */
   row.addEventListener('click', function(e){
+    if (e.shiftKey && !e.ctrlKey && !e.metaKey && lastRowId && lastRowId !== L.id){
+      if (selectRange(lastRowId, L.id)){ renderAll(); return; }
+    }
     if (e.ctrlKey || e.metaKey || e.shiftKey){
       const list = selSet().slice();
       const i = list.indexOf(L.id);
@@ -215,6 +245,7 @@ function makeLayerRow(L, g){
       setSel(list, L.id);
     } else {
       setSel([L.id], L.id);
+      lastRowId = L.id;
     }
     renderAll();
   });
@@ -222,24 +253,27 @@ function makeLayerRow(L, g){
     const n = prompt('图层名称', L.name);
     if (n !== null && n.trim()){ pushUndo(); L.name = n.trim(); renderAll(); }
   });
+  /* 拖一行 = 拖它所在的整批：多选时整批走，单选时就是它自己 */
   row.addEventListener('dragstart', function(e){
-    dragId = L.id; row.classList.add('dragging');
+    const sel = selSet();
+    dragIds = (sel.length > 1 && sel.indexOf(L.id) >= 0) ? sel.slice() : [L.id];
+    row.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     try { e.dataTransfer.setData('text/plain', String(L.id)); } catch(_){}
   });
-  row.addEventListener('dragend', function(){ dragId = null; clearDropMarks(); renderLayerList(); });
+  row.addEventListener('dragend', function(){ dragIds = null; clearDropMarks(); renderLayerList(); });
   row.addEventListener('dragover', function(e){
-    if (dragId === null || dragId === L.id) return;
+    if (!dragIds || dragIds.indexOf(L.id) >= 0) return;
     e.preventDefault(); clearDropMarks();
     const r = row.getBoundingClientRect();
     row.classList.add((e.clientY - r.top) > r.height/2 ? 'dropafter' : 'dropbefore');
   });
   row.addEventListener('drop', function(e){
-    if (dragId === null || dragId === L.id) return;
+    if (!dragIds || dragIds.indexOf(L.id) >= 0) return;
     e.preventDefault(); e.stopPropagation();
     const r = row.getBoundingClientRect();
-    moveLayerRelative(dragId, L.id, (e.clientY - r.top) > r.height/2);
-    dragId = null; clearDropMarks();
+    moveBlockRelative(dragIds, { id: L.id }, (e.clientY - r.top) > r.height/2);
+    dragIds = null; clearDropMarks();
   });
   return row;
 }
@@ -248,4 +282,79 @@ function clearDropMarks(){
   listEl.querySelectorAll('.dropbefore,.dropafter').forEach(function(el){
     el.classList.remove('dropbefore','dropafter');
   });
+}
+/* =========================================================
+   图层区框选 + 范围选择
+   ---------------------------------------------------------
+   框选：在列表空白处按下拖动，矩形碰到的行进入选择集。
+        行上按下仍然是排序拖拽（HTML5 drag），两者不打架 ——
+        这也是为什么框选只从空白起步：同一块区域不能既排序又框选。
+        列表底部留了 44px 空白，层数满了也能从这里起手。
+   范围：Shift + 点击某行 = 从上次点的那行到这一行全选（Ctrl 仍是逐个加减）。
+   ========================================================= */
+let lassoOn = false, lassoY0 = 0, lassoEl = null;
+let lastRowId = null;              // 范围选择的锚点
+
+function listPointY(e){
+  const r = listEl.getBoundingClientRect();
+  return e.clientY - r.top + listEl.scrollTop;
+}
+function ensureLasso(){
+  if (!lassoEl){
+    lassoEl = h('div', { class: 'lasso' });
+    listEl.appendChild(lassoEl);
+  }
+  return lassoEl;
+}
+function lassoPick(y0, y1){
+  const lo = Math.min(y0, y1), hi = Math.max(y0, y1);
+  const ids = [];
+  for (let i = 0; i < listEl.children.length; i++){
+    const row = listEl.children[i];
+    if (!row._L) continue;                       // 组头不参与框选
+    const top = row.offsetTop, bot = top + row.offsetHeight;
+    if (bot >= lo && top <= hi) ids.push(row._L.id);
+  }
+  setSel(ids, ids.length ? ids[ids.length - 1] : null);
+  syncLayerSel();                                // 只切 class，不重建行
+  renderStatus(); syncButtons();
+}
+function endLasso(){
+  if (!lassoOn) return;
+  lassoOn = false;
+  if (lassoEl) lassoEl.style.display = 'none';
+  renderAll();                                   // 松手后把属性面板补上
+}
+listEl.addEventListener('pointerdown', function(e){
+  if (e.button !== 0) return;
+  if (e.target.closest && e.target.closest('.li')) return;   // 行上交给排序 / 点击
+  if (!listEl.querySelector('.li')) return;
+  lassoOn = true;
+  lassoY0 = listPointY(e);
+  const el = ensureLasso();
+  el.style.display = 'block';
+  el.style.top = lassoY0 + 'px';
+  el.style.height = '0px';
+  try { listEl.setPointerCapture(e.pointerId); } catch(_){}
+  e.preventDefault();
+});
+listEl.addEventListener('pointermove', function(e){
+  if (!lassoOn) return;
+  const y = listPointY(e);
+  lassoEl.style.top = Math.min(y, lassoY0) + 'px';
+  lassoEl.style.height = Math.abs(y - lassoY0) + 'px';
+  lassoPick(lassoY0, y);
+});
+listEl.addEventListener('pointerup', endLasso);
+listEl.addEventListener('pointercancel', endLasso);
+window.addEventListener('pointerup', endLasso);
+
+/* 范围选择：锚点 -> 目标，中间的行全选 */
+function selectRange(anchorId, targetId){
+  const a = S.layers.findIndex(function(L){ return L.id === anchorId; });
+  const b = S.layers.findIndex(function(L){ return L.id === targetId; });
+  if (a < 0 || b < 0) return false;
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  setSel(S.layers.slice(lo, hi + 1).map(function(L){ return L.id; }), targetId);
+  return true;
 }

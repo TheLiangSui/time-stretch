@@ -373,6 +373,43 @@ const BODY = `
       }).length;
       R.push((underCnt >= 2 ? 'PASS' : 'FAIL') + ' 该点确有 ' + underCnt + ' 层重叠（穿透才有意义）');
 
+      /* ---------- G2. Shift / Ctrl 在画布上直接多选 ---------- */
+      (function(){
+        try {
+        var kept = T.S.layers.slice(), keptSel = T.selSet().slice();
+        T.S.layers = [];
+        var S1 = T.addLayer({ x:10,  y:10, w:30, h:20 });
+        var S2 = T.addLayer({ x:60,  y:10, w:30, h:20 });
+        var S3 = T.addLayer({ x:110, y:10, w:30, h:20 });
+        T.setSel([], null); T.render();
+
+        fire('pointerdown', 20, 15); fire('pointerup', 20, 15);
+        chk('普通点击选中一层', T.selSet().length, 1);
+
+        fire('pointerdown', 70, 15, { shiftKey:true });
+        fire('pointerup',   70, 15, { shiftKey:true });
+        chk('Shift 点击 = 加选', T.selSet().length, 2);
+        R.push((T.selSet().indexOf(S2.id) >= 0 ? 'PASS' : 'FAIL') +
+               ' 加进来的是被点的那层');
+
+        fire('pointerdown', 120, 15, { ctrlKey:true });
+        fire('pointerup',   120, 15, { ctrlKey:true });
+        chk('Ctrl 点击再加一层', T.selSet().length, 3);
+
+        fire('pointerdown', 70, 15, { shiftKey:true });
+        fire('pointerup',   70, 15, { shiftKey:true });
+        chk('再 Shift 点同一层 = 取消它', T.selSet().length, 2);
+        R.push((T.selSet().indexOf(S2.id) < 0 ? 'PASS' : 'FAIL') + ' 取消后不再含该层');
+
+        chk('Shift 点击不会移动图层', Math.round(S3.x), 110);
+        chk('Shift 点击不产生选中位移', T.selSet().length >= 1, true);
+
+        T.S.layers = kept;
+        T.setSel(keptSel, keptSel.length ? keptSel[keptSel.length-1] : null);
+        T.render();
+        } catch(e){ R.push('FAIL G2 段异常: ' + (e && e.message)); }
+      })();
+
       /* ---------- 随机 ---------- */
       T.S.layers.forEach(function(x){ x.sat = 0; x.warm = 0; x._col = null; });
       document.getElementById('randStr').value = 40;
@@ -439,48 +476,67 @@ const BODY = `
       R.push((g50 ? 'PASS' : 'FAIL') + ' block=50 同样整块取首行');
       L.block = 1; L._col = null;
 
-      /* ---------- I2. 随机切点 / 网格 ---------- */
-      var c0 = T.randomCuts(1000, 5, 0);
-      chk('随机度0 = 完全等分', c0.join(','), '0,200,400,600,800,1000');
-      chk('单个 = [0,total]', T.randomCuts(1000, 1, 1).join(','), '0,1000');
-      var cj = T.randomCuts(1000, 8, 1);
-      var segLens = [];
-      for (var q3 = 0; q3 < 8; q3++) segLens.push(cj[q3+1] - cj[q3]);
-      chk('随机切点首尾锚定', cj[0] + ',' + cj[8], '0,1000');
-      R.push((cj.every(function(v,i){ return i === 0 || v > cj[i-1]; }) ? 'PASS' : 'FAIL') +
-             ' 随机切点严格递增');
-      var mn = Math.min.apply(null, segLens), mx = Math.max.apply(null, segLens);
-      R.push((mx - mn > 40 ? 'PASS' : 'FAIL') + ' 随机度100 段长确实不均 got ' + mn + '~' + mx);
-      var se = T.cutsToSegs([0,100,200], 200, 0);
-      chk('重叠0 相邻不重叠', se[0].join(',') + ' | ' + se[1].join(','), '0,100 | 100,200');
-      var so = T.cutsToSegs([0,100,200], 200, 1);
-      chk('重叠100% 各向外扩半格', so[0].join(',') + ' | ' + so[1].join(','), '0,150 | 50,200');
+      /* ---------- I2. 随机铺框：铺满、不重叠、数量准 ---------- */
+      (function(){
+        try {
+        var T2 = T.tileSplit(100, 60, 12, 50);
+        chk('铺框数量等于设定', T2.length, 12);
+        var area = T2.reduce(function(a, r){ return a + r.w * r.h; }, 0);
+        chk('铺框总面积 = 整图', area, 6000);
+        R.push((T2.every(function(r){
+          return r.w > 0 && r.h > 0 && r.x >= 0 && r.y >= 0 &&
+                 r.x + r.w <= 100 && r.y + r.h <= 60;
+        }) ? 'PASS' : 'FAIL') + ' 每块都在图内且尺寸为正');
 
-      /* ---------- I3. 随机框 ---------- */
-      /* 图是 100×60：宽 20~30% -> 20~30px，高 50~60% -> 30~36px */
-      document.getElementById('rbWMin').value = '20';
-      document.getElementById('rbWMax').value = '30';
-      document.getElementById('rbHMin').value = '50';
-      document.getElementById('rbHMax').value = '60';
-      var rbs = T.randomBoxes(60);
-      var inRange = rbs.every(function(r){
-        return r.w >= 20 && r.w <= 30 && r.h >= 30 && r.h <= 36 &&
-               r.x >= 0 && r.y >= 0 && r.x + r.w <= 100 && r.y + r.h <= 60;
-      });
-      R.push((inRange ? 'PASS' : 'FAIL') + ' 随机框尺寸/位置全部落在设定范围内');
-      R.push((rbs.length === 60 ? 'PASS' : 'FAIL') + ' 随机框个数 got=' + rbs.length + ' want=60');
-      var uniq = {}; rbs.forEach(function(r){ uniq[r.x + '_' + r.y] = 1; });
-      R.push((Object.keys(uniq).length > 30 ? 'PASS' : 'FAIL') + ' 随机框位置确有分散 got=' + Object.keys(uniq).length + '/60');
-      /* 宽高范围写反了要能自动纠正 */
-      document.getElementById('rbWMin').value = '60';
-      document.getElementById('rbWMax').value = '20';
-      var fixed = T.randomBoxes(60);
-      R.push((fixed.every(function(r){ return r.w >= 20 && r.w <= 60; }) ? 'PASS' : 'FAIL') +
-             ' 最小>最大时自动交换 got 例=' + fixed[0].w);
-      document.getElementById('rbWMin').value = '8';
-      document.getElementById('rbWMax').value = '40';
-      document.getElementById('rbHMin').value = '20';
-      document.getElementById('rbHMax').value = '100';
+        var overlap = 0;
+        for (var i1 = 0; i1 < T2.length; i1++){
+          for (var j1 = i1 + 1; j1 < T2.length; j1++){
+            var a1 = T2[i1], b1 = T2[j1];
+            var ox = Math.min(a1.x + a1.w, b1.x + b1.w) - Math.max(a1.x, b1.x);
+            var oy = Math.min(a1.y + a1.h, b1.y + b1.h) - Math.max(a1.y, b1.y);
+            if (ox > 0 && oy > 0) overlap++;
+          }
+        }
+        chk('铺框两两不重叠', overlap, 0);
+
+        /* 差异 0：没有随机，块面尽量等大 */
+        var eq = T.tileSplit(100, 60, 8, 0);
+        var areas = eq.map(function(r){ return r.w * r.h; });
+        var mn = Math.min.apply(null, areas), mx = Math.max.apply(null, areas);
+        R.push((mx / mn <= 4 ? 'PASS' : 'FAIL') +
+               ' 差异0 时块面接近等大 比=' + (mx / mn).toFixed(2));
+
+        /* 差异 100：多试几次，总能切出一大一小 */
+        var spread = 0;
+        for (var q5 = 0; q5 < 12; q5++){
+          var two = T.tileSplit(100, 60, 2, 100);
+          var r0 = Math.max(two[0].w / two[1].w, two[1].w / two[0].w);
+          if (r0 > 1.6) spread++;
+        }
+        R.push((spread > 0 ? 'PASS' : 'FAIL') +
+               ' 差异100 时切点确实偏离中线 ' + spread + '/12 次');
+
+        chk('数量 1 = 整块', T.tileSplit(30, 20, 1, 50).length, 1);
+        var many = T.tileSplit(30, 20, 500, 100);
+        R.push((many.length <= 500 && many.every(function(r){ return r.w >= 1 && r.h >= 1; })
+                ? 'PASS' : 'FAIL') + ' 数量超过可切分数时安全收敛 ' + many.length);
+        } catch(e){ R.push('FAIL I2 段异常: ' + (e && e.message)); }
+      })();
+
+      /* ---------- I3. 铺框按钮走通 ---------- */
+      (function(){
+        try {
+        var keptI = T.S.layers.slice();
+        document.getElementById('tileN').value = '5';
+        document.getElementById('tileVar').value = '40';
+        document.getElementById('btnTile').click();
+        chk('按钮铺出 5 层', T.S.layers.length, 5);
+        R.push((T.S.layers[0].name.indexOf('铺框') === 0 ? 'PASS' : 'FAIL') + ' 层名带「铺框」');
+        var sum = T.S.layers.reduce(function(a, L){ return a + L.w * L.h; }, 0);
+        chk('铺出来的层覆盖整图', sum, T.S.src.w * T.S.src.h);
+        T.S.layers = keptI; T.setSel([], null); T.render();
+        } catch(e){ R.push('FAIL I3 段异常: ' + (e && e.message)); }
+      })();
 
       /* ---------- J. 垂直方向取样偏移（行渐变图，第 y 行纯色 rgb(4y,0,255-4y)） ---------- */
       T.S.layers = [];
@@ -660,7 +716,7 @@ const BODY = `
 
       /* ---------- J8. 智能框选确实已被移除 ---------- */
       chk('智能框选按钮已删除', document.getElementById('btnSmartBox'), 'null');
-      chk('随机框选按钮仍在', !!document.getElementById('btnRandBox'), true);
+      chk('旧的随机框选按钮已删除', document.getElementById('btnRandBox'), 'null');
       R.push((typeof T.smartBoxes === 'undefined' && typeof T.getSaliency === 'undefined'
               ? 'PASS' : 'FAIL') + ' 显著性检测相关接口已彻底移除');
 
@@ -692,12 +748,12 @@ const BODY = `
         Math.floor(thumbs[1].width/2), Math.floor(thumbs[1].height/2), 1, 1).data : [0,0,0,0];
       R.push((thPx[3] > 0 ? 'PASS' : 'FAIL') + ' 缩略图不是空白 alpha=' + thPx[3]);
 
-      /* K3 左侧分段控件 */
-      document.querySelector('#autoSeg button[data-pane="rand"]').click();
-      chk('切到随机框选面板', getComputedStyle(document.getElementById('paneRand')).display, 'block');
-      chk('网格面板被隐藏', getComputedStyle(document.getElementById('paneGrid')).display, 'none');
-      document.querySelector('#autoSeg button[data-pane="grid"]').click();
-      chk('切回网格面板', getComputedStyle(document.getElementById('paneGrid')).display, 'block');
+      /* K3 左侧「随机铺框」面板 */
+      chk('旧的分段切换已移除', document.getElementById('autoSeg'), 'null');
+      chk('铺框按钮就位', !!document.getElementById('btnTile'), true);
+      chk('铺框数量参数就位', !!document.getElementById('tileN'), true);
+      R.push((!document.getElementById('paneGrid') && !document.getElementById('paneRand')
+              ? 'PASS' : 'FAIL') + ' 旧的网格 / 框选面板已删除');
 
       /* K4 方向分段控件（门面是按钮，真值仍在 select 里） */
       document.querySelector('#dirSeg button[data-dir="v"]').click();
@@ -785,11 +841,11 @@ const BODY = `
       chk('双击图标回到默认值', T.S.layers[0].block, defV);
 
       /* K11 静态参数行：只剩一个数字框，可直接键盘输入 */
-      chk('网格参数不再有孪生数字框', document.querySelectorAll('#gridJitV').length, 0);
-      var gj = document.getElementById('gridJit');
+      chk('铺框参数不再有孪生数字框', document.querySelectorAll('#tileNV').length, 0);
+      var gj = document.getElementById('tileVar');
       gj.value = '70'; gj.dispatchEvent(new Event('change', { bubbles:true }));
-      chk('网格参数可直接键盘输入', gj.value, '70');
-      gj.value = '45'; gj.dispatchEvent(new Event('change', { bubbles:true }));
+      chk('铺框参数可直接键盘输入', gj.value, '70');
+      gj.value = '35'; gj.dispatchEvent(new Event('change', { bubbles:true }));
 
       /* K12 撤销：改完参数、焦点还留在控件里时，Ctrl+Z 仍必须生效。
          这是用户报的「撤回不了饱和度」的回归测试 —— 根因是 keydown 里
@@ -1259,6 +1315,110 @@ const BODY = `
         T.S.layers = T.S.layers.filter(function(x){ return x !== Lz; });
         T.setSel([]); T.render();
         } catch(e){ R.push('FAIL R 段异常: ' + (e && e.message)); }
+      })();
+
+      /* ---------- Q2. 图层区框选 / 范围选择 ---------- */
+      (function(){
+        try {
+        var kept2 = T.S.layers.slice();
+        T.S.layers = [];
+        var A1 = T.addLayer({ x:10, y:10, w:20, h:20 });
+        var A2 = T.addLayer({ x:10, y:40, w:20, h:20 });
+        var A3 = T.addLayer({ x:10, y:70, w:20, h:20 });
+        var A4 = T.addLayer({ x:10, y:100, w:20, h:20 });
+        T.setSel([], null); T.render();
+
+        var LIST = document.getElementById('layerlist');
+        function rowsL(){ return Array.prototype.filter.call(LIST.children, function(x){ return !!x._L; }); }
+        var rr = LIST.getBoundingClientRect();
+        var ls = rowsL();
+        chk('列表里四个图层行', ls.length, 4);
+
+        /* 从列表底部空白往上拖，框住最下面两行 */
+        /* 列表是「顶 -> 底」，所以 DOM 最后一行 = 数组里最早的那层 */
+        var wantIds = [ls[2]._L.id, ls[3]._L.id];
+        var bot = ls[3].offsetTop + ls[3].offsetHeight + 8;
+        var top = ls[2].offsetTop + 2;
+        function at(y){ return { bubbles:true, cancelable:true, button:0, buttons:1,
+                                 pointerId:9, pointerType:'mouse', isPrimary:true,
+                                 clientX: rr.left + 40, clientY: rr.top + y }; }
+        LIST.dispatchEvent(new PointerEvent('pointerdown', at(bot)));
+        LIST.dispatchEvent(new PointerEvent('pointermove', at(top)));
+        var lz = LIST.querySelector('.lasso');
+        R.push((lz && lz.style.display !== 'none' ? 'PASS' : 'FAIL') + ' 拖动时出现框选矩形');
+        LIST.dispatchEvent(new PointerEvent('pointerup', at(top)));
+        chk('框选命中两行', T.selSet().length, 2);
+        R.push((wantIds.every(function(id){ return T.selSet().indexOf(id) >= 0; }) ? 'PASS' : 'FAIL') +
+               ' 框到的正是被扫过的那两行');
+        R.push((wantIds.indexOf(A1.id) >= 0 || T.selSet().indexOf(A1.id) < 0 ? 'PASS' : 'FAIL') + ' 没扫到的行不被选中');
+        R.push((lz.style.display === 'none' ? 'PASS' : 'FAIL') + ' 松手后矩形收起');
+
+        /* 行上按下仍然走排序，不触发框选 */
+        var rowTop0 = rowsL()[0].offsetTop + 4;
+        rowsL()[0].dispatchEvent(new PointerEvent('pointerdown', at(rowTop0)));
+        R.push((lz.style.display === 'none' ? 'PASS' : 'FAIL') + ' 行上按下不触发框选');
+
+        /* Shift + 点击 = 范围选择 */
+        T.setSel([], null); T.render();
+        rowsL()[0].dispatchEvent(new MouseEvent('click', { bubbles:true }));
+        chk('点第一行单选', T.selSet().length, 1);
+        rowsL()[2].dispatchEvent(new MouseEvent('click', { bubbles:true, shiftKey:true }));
+        chk('Shift 点第三行 = 选中三行', T.selSet().length, 3);
+        R.push((T.selSet().indexOf(A2.id) >= 0 && T.selSet().indexOf(A3.id) >= 0 ? 'PASS' : 'FAIL') +
+               ' 范围包含中间那行');
+        /* 从下往上反着选，结果应当一样 */
+        rowsL()[3].dispatchEvent(new MouseEvent('click', { bubbles:true }));
+        rowsL()[1].dispatchEvent(new MouseEvent('click', { bubbles:true, shiftKey:true }));
+        chk('反向 Shift 也是三行', T.selSet().length, 3);
+
+        T.S.layers = kept2;
+        T.setSel([], null); T.render();
+        } catch(e){ R.push('FAIL Q2 段异常: ' + (e && e.message)); }
+      })();
+
+      /* ---------- Q3. 整批移动：组 / 多选 ---------- */
+      (function(){
+        try {
+        var kept3 = T.S.layers.slice();
+        var kept3g = JSON.parse(JSON.stringify(T.S.groups));
+        T.S.layers = []; T.S.groups = {}; T.S.nextGid = 1;
+        var B1 = T.addLayer({ x:0, y:0, w:10, h:10 });
+        var B2 = T.addLayer({ x:0, y:0, w:10, h:10 });
+        var B3 = T.addLayer({ x:0, y:0, w:10, h:10 });
+        var B4 = T.addLayer({ x:0, y:0, w:10, h:10 });
+        T.setSel([B2.id, B3.id]); T.groupSelected();
+        T.render();
+        var order = function(){ return T.S.layers.map(function(L){ return L.id; }).join(','); };
+        chk('初始顺序 B1,B2,B3,B4', order(), [B1.id,B2.id,B3.id,B4.id].join(','));
+
+        var LIST3 = document.getElementById('layerlist');
+        var gRow = Array.prototype.filter.call(LIST3.children, function(x){ return !!x._G; })[0];
+        chk('组头可拖动', gRow ? gRow.getAttribute('draggable') : 'none', 'true');
+
+        /* 整组提到最顶（放到 B4 上方） */
+        T.moveBlockRelative([B2.id, B3.id], { id: B4.id }, false);
+        chk('整组上移到顶', order(), [B1.id,B4.id,B2.id,B3.id].join(','));
+        R.push((T.S.groups[B2.gid] && T.S.layers.filter(function(L){ return L.gid === B2.gid; }).length === 2
+                ? 'PASS' : 'FAIL') + ' 移动后仍是同一组两层');
+
+        /* 整组压到最底（放到 B1 下方） */
+        T.moveBlockRelative([B2.id, B3.id], { id: B1.id }, true);
+        chk('整组下移到底', order(), [B2.id,B3.id,B1.id,B4.id].join(','));
+
+        /* 单层插到整组上方：落在组的最顶成员之前 */
+        T.moveBlockRelative([B4.id], { gid: B2.gid }, false);
+        chk('单层插到组上方', order(), [B2.id,B3.id,B4.id,B1.id].join(','));
+
+        /* 拖到自己身上：不产生任何变化 */
+        var before4 = order();
+        T.moveBlockRelative([B4.id], { id: B4.id }, false);
+        chk('落点在被拖层上时不动', order(), before4);
+        T.moveBlockRelative([B2.id, B3.id], { gid: B2.gid }, false);
+        chk('组拖到自己组上时不动', order(), before4);
+
+        T.S.layers = kept3; T.S.groups = kept3g;
+        T.setSel([], null); T.render();
+        } catch(e){ R.push('FAIL Q3 段异常: ' + (e && e.message)); }
       })();
 
       /* ---------- M. 启动页 / 项目库 ---------- */

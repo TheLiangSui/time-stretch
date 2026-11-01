@@ -92,48 +92,17 @@
 
 <aside class="left">
   <div class="sect">
-    <div class="sect-h"><span class="lbl">自动铺框</span><span class="hint">批量生成矩形</span></div>
-    <div class="seg" id="autoSeg" style="margin-bottom:9px">
-      <button data-pane="grid" class="on">随机网格</button>
-      <button data-pane="rand">随机框选</button>
+    <div class="sect-h"><span class="lbl">随机铺框</span><span class="hint">铺满全图 · 互不重叠</span></div>
+    <div class="cells">
+      <div class="cell"><label for="tileN">数量</label>
+        <div class="num"><svg class="cell-ico" data-scrub="tileN" data-def="6"><use href="#i-grid2"/></svg><input type="number" id="tileN" min="1" max="60" step="1" value="6"><span class="sfx">个</span></div></div>
+      <div class="cell"><label for="tileVar">大小差异</label>
+        <div class="num"><svg class="cell-ico" data-scrub="tileVar" data-def="35"><use href="#i-overlap"/></svg><input type="number" id="tileVar" min="0" max="100" step="1" value="35"><span class="sfx">%</span></div></div>
     </div>
-
-    <div id="paneGrid">
-      <div class="cells" style="margin-bottom:6px">
-        <div class="cell"><label for="gridC">列</label>
-          <div class="num"><svg class="cell-ico" data-scrub="gridC" data-def="5"><use href="#i-ax-w"/></svg><input type="number" id="gridC" min="1" max="60" step="1" value="5"></div></div>
-        <div class="cell"><label for="gridR">行</label>
-          <div class="num"><svg class="cell-ico" data-scrub="gridR" data-def="1"><use href="#i-ax-h"/></svg><input type="number" id="gridR" min="1" max="60" step="1" value="1"></div></div>
-      </div>
-      <div class="cells">
-        <div class="cell"><label for="gridJit">尺寸随机</label><div class="num"><svg class="cell-ico" data-scrub="gridJit" data-def="45"><use href="#i-grid2"/></svg><input type="number" id="gridJit" min="0" max="100" step="1" value="45"><span class="sfx">%</span></div></div>
-        <div class="cell"><label for="gridOv">相邻重叠</label><div class="num"><svg class="cell-ico" data-scrub="gridOv" data-def="0"><use href="#i-overlap"/></svg><input type="number" id="gridOv" min="0" max="60" step="1" value="0"><span class="sfx">%</span></div></div>
-      </div>
-      <div class="mini">0 = 完全等分；越大格子宽窄差越夸张。</div>
-      <div class="row" style="display:flex; gap:6px; margin-top:8px">
-        <button id="btnGrid" class="primary" style="flex:1" disabled>生成网格</button>
-        <button id="btnGridRe" class="sq" title="换一批随机切法" disabled aria-label="换一批"><svg class="ic"><use href="#i-dice"/></svg></button>
-      </div>
-    </div>
-
-    <div id="paneRand" style="display:none">
-      <div class="pair">
-        <label>宽度</label><input type="number" id="rbWMin" value="8" min="1" max="100">
-        <span>–</span><input type="number" id="rbWMax" value="40" min="1" max="100"><span>%</span>
-      </div>
-      <div class="pair">
-        <label>高度</label><input type="number" id="rbHMin" value="20" min="1" max="100">
-        <span>–</span><input type="number" id="rbHMax" value="100" min="1" max="100"><span>%</span>
-      </div>
-      <div class="pair" style="grid-template-columns:34px 1fr 20px">
-        <label>个数</label>
-        <input type="number" id="rbN" value="1" min="1" max="50">
-        <span>个</span>
-      </div>
-      <div class="mini">宽高按画面尺寸的百分比抽取。</div>
-      <div class="row" style="margin-top:8px">
-        <button id="btnRandBox" class="primary" style="flex:1" disabled><svg class="ic"><use href="#i-dice"/></svg>随机框选</button>
-      </div>
+    <div class="mini">0 = 每刀都从正中间切，块面尽量等大；越大越参差。</div>
+    <div class="row" style="display:flex; gap:6px; margin-top:8px">
+      <button id="btnTile" class="primary" style="flex:1" disabled>生成铺框</button>
+      <button id="btnTileRe" class="sq" title="换一批（重新随机）" disabled aria-label="换一批"><svg class="ic"><use href="#i-dice"/></svg></button>
     </div>
   </div>
 
@@ -257,7 +226,10 @@
       <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>原地复制一层 / 导入图片</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>撤销 / 重做（焦点在参数框里也有效）</td></tr>
       <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>图层下沉 / 上浮</td></tr>
-      <tr><td><kbd>Ctrl</kbd>+点击图层行 / 组头</td><td>多选（成组与整体移动的前提）</td></tr>
+      <tr><td><kbd>Shift</kbd> / <kbd>Ctrl</kbd>+点击图层行</td><td>多选；<kbd>Shift</kbd> 是「从上次点的那行到这里」整段选</td></tr>
+      <tr><td>图层区空白处拖动</td><td>框选：矩形扫过的行进入选择</td></tr>
+      <tr><td><kbd>Shift</kbd> / <kbd>Ctrl</kbd>+点画布上的图层</td><td>直接在画布上增减选择</td></tr>
+      <tr><td>拖动图层行 / 组头</td><td>调整前后顺序；拖组头 = 整组一起挪</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td><td>成组 / 解散合集</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>M</kbd></td><td>合并选中的多个图层为一个形状</td></tr>
       <tr><td><kbd>E</kbd> / <kbd>L</kbd></td><td>显示隐藏 / 锁定位置</td></tr>

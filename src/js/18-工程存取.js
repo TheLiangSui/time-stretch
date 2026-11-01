@@ -87,9 +87,9 @@ function applyProjectData(d, opt){
     setSel([]); S.undoStack = []; S.redoStack = [];
     pushUndo(true);
     $('btnExport').disabled = false;
-    $('btnGrid').disabled = false;
-    $('btnGridRe').disabled = false;
-    $('btnRandBox').disabled = false;
+    $('btnTile').disabled = false;
+    $('btnTileRe').disabled = false;
+    
     $('btnRandAll').disabled = false;
     $('btnRandOrder').disabled = false;
     $('srcInfo').replaceChildren(

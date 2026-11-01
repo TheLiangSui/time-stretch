@@ -215,7 +215,19 @@ aside.right>.rz{left:-4px}
   display:flex; align-items:center; justify-content:space-between;
   padding:9px 10px 5px; border-top:1px solid var(--line); margin-top:8px;
 }
-.layerlist{flex:1; overflow-y:auto; padding:0 4px 8px; min-height:0}
+.layerlist{
+  flex:1; overflow-y:auto; min-height:0;
+  /* 底部留一条空白：从空白处按下拖动 = 框选（行上拖动仍然是排序） */
+  padding:0 4px 44px;
+  position:relative;
+}
+/* 框选矩形：跟着滚动内容走，所以挂在列表里而不是 body 上 */
+.lasso{
+  position:absolute; left:0; right:0; pointer-events:none; z-index:4;
+  border:1px solid var(--ac-line);
+  background:var(--ac-soft);
+  border-radius:3px;
+}
 .li{
   display:flex; align-items:center; gap:9px; position:relative;
   padding:6px 7px; border-radius:5px;

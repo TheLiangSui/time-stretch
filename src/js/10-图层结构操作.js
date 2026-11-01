@@ -4,7 +4,7 @@
    动的是数据：数组顺序、gid、parts。不画界面 ——
    改完自己调 renderAll()，面板靠签名判断要不要重建。
    ========================================================= */
-let dragId = null;
+let dragIds = null;           // 正在拖的一批层（单层 / 多选 / 整组）
 
 function groupSelected(){
   const ids = selSet();
@@ -83,15 +83,38 @@ function mergeSelectedShapes(){
   toast('已把 ' + members.length + ' 个图层合并成 1 个形状');
 }
 
-function moveLayerRelative(fromId, toId, placeAfterInList){
-  const from = S.layers.findIndex(function(L){ return L.id === fromId; });
-  if (from < 0) return;
-  const item = S.layers.splice(from, 1)[0];
-  let to = S.layers.findIndex(function(L){ return L.id === toId; });
-  if (to < 0){ S.layers.splice(from, 0, item); return; }
-  if (!placeAfterInList) to += 1;   // 列表是「顶->底」，数组是「底->顶」，方向相反
+/* 把一批层整体挪到目标前/后。
+   target 可以是 { id } 单层，也可以是 { gid } 整个合集。
+   列表是「顶 -> 底」，数组是「底 -> 顶」，所以 afterInList 对应数组里更小的下标。 */
+function moveBlockRelative(moveIds, target, afterInList){
+  if (!moveIds || !moveIds.length || !target) return;
+  const ids = {};
+  moveIds.forEach(function(id){ ids[id] = 1; });
+  const moving = S.layers.filter(function(L){ return ids[L.id]; });
+  if (!moving.length) return;
+  if (target.id && ids[target.id]) return;                       // 落点就在被拖的里面
+  if (target.gid && moving.some(function(L){ return L.gid === target.gid; })) return;
+
+  let at = -1;
+  if (target.gid){
+    let lo = -1, hi = -1;
+    for (let i = 0; i < S.layers.length; i++){
+      if (S.layers[i].gid === target.gid){ if (lo < 0) lo = i; hi = i; }
+    }
+    if (lo < 0) return;
+    at = afterInList ? lo : hi + 1;
+  } else {
+    const t = S.layers.findIndex(function(L){ return L.id === target.id; });
+    if (t < 0) return;
+    at = afterInList ? t : t + 1;
+  }
+
   pushUndo();
-  S.layers.splice(to, 0, item);
+  let removedBefore = 0;
+  for (let i = 0; i < at; i++) if (ids[S.layers[i].id]) removedBefore++;
+  const rest = S.layers.filter(function(L){ return !ids[L.id]; });
+  const ins = at - removedBefore;
+  S.layers = rest.slice(0, ins).concat(moving, rest.slice(ins));
   renderAll();
 }
 function shiftLayer(dir){   // +1 上浮（数组后移），-1 下沉

@@ -59,6 +59,17 @@ vp.addEventListener('pointerdown', function(e){
   /* Alt + 点击 = 穿透到下一层（矩形重叠时的选中手段） */
   const hit = hitLayer(im.x, im.y, e.altKey ? S.sel : null);
   if (hit){
+    /* Shift / Ctrl + 点击 = 在画布上直接增减选择，和图层面板里点行同义。
+       这一下不进入拖动：多选是「先选好，再拖」，和面板的行点击保持一致。 */
+    if (e.shiftKey || e.ctrlKey || e.metaKey){
+      const list = selSet().slice();
+      const i = list.indexOf(hit.id);
+      if (i < 0) list.push(hit.id);
+      else if (list.length > 1) list.splice(i, 1);
+      setSel(list, hit.id);
+      renderAll();
+      return;
+    }
     /* 点已在多选里的层：保留整组选择，只把主选中切过去 */
     if (!isSel(hit.id)) setSel([hit.id], hit.id);
     else S._sel = hit.id;

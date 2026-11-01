@@ -28,26 +28,6 @@ propsEl.addEventListener('toggle', function(e){
   if (d && d.dataset && d.dataset.grp) grpOpen[d.dataset.grp] = d.open;
 }, true);
 
-/* 左侧「随机网格 / 随机框选」两个面板用分段控件切换 */
-(function initAutoSeg(){
-  const seg = $('autoSeg');
-  if (!seg) return;
-  const panes = {
-    grid: $('paneGrid'),
-    rand: $('paneRand')
-  };
-  seg.addEventListener('click', function(e){
-    const b = e.target.closest('button[data-pane]');
-    if (!b) return;
-    Array.prototype.forEach.call(seg.children, function(x){
-      x.classList.toggle('on', x === b);
-    });
-    for (const k in panes){
-      if (panes[k]) panes[k].style.display = (k === b.getAttribute('data-pane')) ? '' : 'none';
-    }
-  });
-})();
-
 /* 拉伸方向：分段控件是门面，真正的值仍存在 select#newDir 里（工程文件与快捷键都读它） */
 function syncDirSeg(){
   const sel = $('newDir');
@@ -171,10 +151,7 @@ window.__tool = {
   buildExportCanvas: buildExportCanvas,
   buildSeq: buildSeq,
   randSeed: randSeed,
-  randomCuts: randomCuts,
-  cutsToSegs: cutsToSegs,
-  makeGrid: makeGrid,
-  randomBoxes: randomBoxes,
+  tileSplit: tileSplit,
   sampleLine: sampleLine,
   copyLayer: copyLayer,
   createImageLayer: createImageLayer,
@@ -183,6 +160,7 @@ window.__tool = {
   projectData: projectData,
   groupSelected: groupSelected,
   mergeSelectedShapes: mergeSelectedShapes,
+  moveBlockRelative: moveBlockRelative,
   home: {
     enter: enterEditor, go: goHome, create: newProject,
     save: saveToLibrary, render: renderHome,

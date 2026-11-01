@@ -222,7 +222,19 @@ aside.right>.rz{left:-4px}
   display:flex; align-items:center; justify-content:space-between;
   padding:9px 10px 5px; border-top:1px solid var(--line); margin-top:8px;
 }
-.layerlist{flex:1; overflow-y:auto; padding:0 4px 8px; min-height:0}
+.layerlist{
+  flex:1; overflow-y:auto; min-height:0;
+  /* 底部留一条空白：从空白处按下拖动 = 框选（行上拖动仍然是排序） */
+  padding:0 4px 44px;
+  position:relative;
+}
+/* 框选矩形：跟着滚动内容走，所以挂在列表里而不是 body 上 */
+.lasso{
+  position:absolute; left:0; right:0; pointer-events:none; z-index:4;
+  border:1px solid var(--ac-line);
+  background:var(--ac-soft);
+  border-radius:3px;
+}
 .li{
   display:flex; align-items:center; gap:9px; position:relative;
   padding:6px 7px; border-radius:5px;
@@ -828,48 +840,17 @@ kbd{
 
 <aside class="left">
   <div class="sect">
-    <div class="sect-h"><span class="lbl">自动铺框</span><span class="hint">批量生成矩形</span></div>
-    <div class="seg" id="autoSeg" style="margin-bottom:9px">
-      <button data-pane="grid" class="on">随机网格</button>
-      <button data-pane="rand">随机框选</button>
+    <div class="sect-h"><span class="lbl">随机铺框</span><span class="hint">铺满全图 · 互不重叠</span></div>
+    <div class="cells">
+      <div class="cell"><label for="tileN">数量</label>
+        <div class="num"><svg class="cell-ico" data-scrub="tileN" data-def="6"><use href="#i-grid2"/></svg><input type="number" id="tileN" min="1" max="60" step="1" value="6"><span class="sfx">个</span></div></div>
+      <div class="cell"><label for="tileVar">大小差异</label>
+        <div class="num"><svg class="cell-ico" data-scrub="tileVar" data-def="35"><use href="#i-overlap"/></svg><input type="number" id="tileVar" min="0" max="100" step="1" value="35"><span class="sfx">%</span></div></div>
     </div>
-
-    <div id="paneGrid">
-      <div class="cells" style="margin-bottom:6px">
-        <div class="cell"><label for="gridC">列</label>
-          <div class="num"><svg class="cell-ico" data-scrub="gridC" data-def="5"><use href="#i-ax-w"/></svg><input type="number" id="gridC" min="1" max="60" step="1" value="5"></div></div>
-        <div class="cell"><label for="gridR">行</label>
-          <div class="num"><svg class="cell-ico" data-scrub="gridR" data-def="1"><use href="#i-ax-h"/></svg><input type="number" id="gridR" min="1" max="60" step="1" value="1"></div></div>
-      </div>
-      <div class="cells">
-        <div class="cell"><label for="gridJit">尺寸随机</label><div class="num"><svg class="cell-ico" data-scrub="gridJit" data-def="45"><use href="#i-grid2"/></svg><input type="number" id="gridJit" min="0" max="100" step="1" value="45"><span class="sfx">%</span></div></div>
-        <div class="cell"><label for="gridOv">相邻重叠</label><div class="num"><svg class="cell-ico" data-scrub="gridOv" data-def="0"><use href="#i-overlap"/></svg><input type="number" id="gridOv" min="0" max="60" step="1" value="0"><span class="sfx">%</span></div></div>
-      </div>
-      <div class="mini">0 = 完全等分；越大格子宽窄差越夸张。</div>
-      <div class="row" style="display:flex; gap:6px; margin-top:8px">
-        <button id="btnGrid" class="primary" style="flex:1" disabled>生成网格</button>
-        <button id="btnGridRe" class="sq" title="换一批随机切法" disabled aria-label="换一批"><svg class="ic"><use href="#i-dice"/></svg></button>
-      </div>
-    </div>
-
-    <div id="paneRand" style="display:none">
-      <div class="pair">
-        <label>宽度</label><input type="number" id="rbWMin" value="8" min="1" max="100">
-        <span>–</span><input type="number" id="rbWMax" value="40" min="1" max="100"><span>%</span>
-      </div>
-      <div class="pair">
-        <label>高度</label><input type="number" id="rbHMin" value="20" min="1" max="100">
-        <span>–</span><input type="number" id="rbHMax" value="100" min="1" max="100"><span>%</span>
-      </div>
-      <div class="pair" style="grid-template-columns:34px 1fr 20px">
-        <label>个数</label>
-        <input type="number" id="rbN" value="1" min="1" max="50">
-        <span>个</span>
-      </div>
-      <div class="mini">宽高按画面尺寸的百分比抽取。</div>
-      <div class="row" style="margin-top:8px">
-        <button id="btnRandBox" class="primary" style="flex:1" disabled><svg class="ic"><use href="#i-dice"/></svg>随机框选</button>
-      </div>
+    <div class="mini">0 = 每刀都从正中间切，块面尽量等大；越大越参差。</div>
+    <div class="row" style="display:flex; gap:6px; margin-top:8px">
+      <button id="btnTile" class="primary" style="flex:1" disabled>生成铺框</button>
+      <button id="btnTileRe" class="sq" title="换一批（重新随机）" disabled aria-label="换一批"><svg class="ic"><use href="#i-dice"/></svg></button>
     </div>
   </div>
 
@@ -993,7 +974,10 @@ kbd{
       <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>原地复制一层 / 导入图片</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>撤销 / 重做（焦点在参数框里也有效）</td></tr>
       <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>图层下沉 / 上浮</td></tr>
-      <tr><td><kbd>Ctrl</kbd>+点击图层行 / 组头</td><td>多选（成组与整体移动的前提）</td></tr>
+      <tr><td><kbd>Shift</kbd> / <kbd>Ctrl</kbd>+点击图层行</td><td>多选；<kbd>Shift</kbd> 是「从上次点的那行到这里」整段选</td></tr>
+      <tr><td>图层区空白处拖动</td><td>框选：矩形扫过的行进入选择</td></tr>
+      <tr><td><kbd>Shift</kbd> / <kbd>Ctrl</kbd>+点画布上的图层</td><td>直接在画布上增减选择</td></tr>
+      <tr><td>拖动图层行 / 组头</td><td>调整前后顺序；拖组头 = 整组一起挪</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td><td>成组 / 解散合集</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>M</kbd></td><td>合并选中的多个图层为一个形状</td></tr>
       <tr><td><kbd>E</kbd> / <kbd>L</kbd></td><td>显示隐藏 / 锁定位置</td></tr>
@@ -1366,9 +1350,9 @@ function ingestImage(img, name){
   pushUndo(true);
 
   $('btnExport').disabled = false;
-  $('btnGrid').disabled = false;
-  $('btnGridRe').disabled = false;
-  $('btnRandBox').disabled = false;
+  $('btnTile').disabled = false;
+  $('btnTileRe').disabled = false;
+  
   $('btnRandAll').disabled = false;
   $('btnRandOrder').disabled = false;
   $('srcInfo').replaceChildren(
@@ -2044,7 +2028,7 @@ function redo(){
    动的是数据：数组顺序、gid、parts。不画界面 ——
    改完自己调 renderAll()，面板靠签名判断要不要重建。
    ========================================================= */
-let dragId = null;
+let dragIds = null;           // 正在拖的一批层（单层 / 多选 / 整组）
 
 function groupSelected(){
   const ids = selSet();
@@ -2123,15 +2107,38 @@ function mergeSelectedShapes(){
   toast('已把 ' + members.length + ' 个图层合并成 1 个形状');
 }
 
-function moveLayerRelative(fromId, toId, placeAfterInList){
-  const from = S.layers.findIndex(function(L){ return L.id === fromId; });
-  if (from < 0) return;
-  const item = S.layers.splice(from, 1)[0];
-  let to = S.layers.findIndex(function(L){ return L.id === toId; });
-  if (to < 0){ S.layers.splice(from, 0, item); return; }
-  if (!placeAfterInList) to += 1;   // 列表是「顶->底」，数组是「底->顶」，方向相反
+/* 把一批层整体挪到目标前/后。
+   target 可以是 { id } 单层，也可以是 { gid } 整个合集。
+   列表是「顶 -> 底」，数组是「底 -> 顶」，所以 afterInList 对应数组里更小的下标。 */
+function moveBlockRelative(moveIds, target, afterInList){
+  if (!moveIds || !moveIds.length || !target) return;
+  const ids = {};
+  moveIds.forEach(function(id){ ids[id] = 1; });
+  const moving = S.layers.filter(function(L){ return ids[L.id]; });
+  if (!moving.length) return;
+  if (target.id && ids[target.id]) return;                       // 落点就在被拖的里面
+  if (target.gid && moving.some(function(L){ return L.gid === target.gid; })) return;
+
+  let at = -1;
+  if (target.gid){
+    let lo = -1, hi = -1;
+    for (let i = 0; i < S.layers.length; i++){
+      if (S.layers[i].gid === target.gid){ if (lo < 0) lo = i; hi = i; }
+    }
+    if (lo < 0) return;
+    at = afterInList ? lo : hi + 1;
+  } else {
+    const t = S.layers.findIndex(function(L){ return L.id === target.id; });
+    if (t < 0) return;
+    at = afterInList ? t : t + 1;
+  }
+
   pushUndo();
-  S.layers.splice(to, 0, item);
+  let removedBefore = 0;
+  for (let i = 0; i < at; i++) if (ids[S.layers[i].id]) removedBefore++;
+  const rest = S.layers.filter(function(L){ return !ids[L.id]; });
+  const ins = at - removedBefore;
+  S.layers = rest.slice(0, ins).concat(moving, rest.slice(ins));
   renderAll();
 }
 function shiftLayer(dir){   // +1 上浮（数组后移），-1 下沉
@@ -2232,7 +2239,7 @@ function makeGroupRow(g){
     } }
   }, icon(g.visible ? 'i-eye' : 'i-eyeoff', 'ic-s'));
 
-  const row = h('div', { class: 'li grp-row' + (allSel ? ' sel' : '') },
+  const row = h('div', { class: 'li grp-row' + (allSel ? ' sel' : ''), draggable: 'true' },
     tog,
     h('span', { class: 'gico' }, icon('i-group', 'ic-s')),
     h('span', { class: 'txt' },
@@ -2241,6 +2248,31 @@ function makeGroupRow(g){
     eye);
 
   row._G = g;
+
+  /* 组头和普通行一样能拖 —— 拖的是整组，落点是另一组的整块或某个单层 */
+  row.addEventListener('dragstart', function(e){
+    dragIds = members.map(function(L){ return L.id; });
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', 'g:' + g.id); } catch(_){}
+  });
+  row.addEventListener('dragend', function(){ dragIds = null; clearDropMarks(); renderLayerList(); });
+  row.addEventListener('dragover', function(e){
+    if (!dragIds) return;
+    if (members.some(function(L){ return dragIds.indexOf(L.id) >= 0; })) return;
+    e.preventDefault(); clearDropMarks();
+    const r = row.getBoundingClientRect();
+    row.classList.add((e.clientY - r.top) > r.height/2 ? 'dropafter' : 'dropbefore');
+  });
+  row.addEventListener('drop', function(e){
+    if (!dragIds) return;
+    if (members.some(function(L){ return dragIds.indexOf(L.id) >= 0; })) return;
+    e.preventDefault(); e.stopPropagation();
+    const r = row.getBoundingClientRect();
+    moveBlockRelative(dragIds, { gid: g.id }, (e.clientY - r.top) > r.height/2);
+    dragIds = null; clearDropMarks();
+  });
+
   row.addEventListener('click', function(e){
     if (e.ctrlKey || e.metaKey || e.shiftKey){
       members.forEach(function(L){ if (!isSel(L.id)) S.selIds.push(L.id); });
@@ -2350,8 +2382,13 @@ function makeLayerRow(L, g){
     lk, eye);
 
   row._L = L;
-  /* 点击 = 单选；Ctrl / Shift + 点击 = 增减选 */
+  /* 点击 = 单选（同时记下范围锚点）
+     Shift + 点击 = 从锚点到这一行全选
+     Ctrl / ⌘ + 点击 = 逐个加减 */
   row.addEventListener('click', function(e){
+    if (e.shiftKey && !e.ctrlKey && !e.metaKey && lastRowId && lastRowId !== L.id){
+      if (selectRange(lastRowId, L.id)){ renderAll(); return; }
+    }
     if (e.ctrlKey || e.metaKey || e.shiftKey){
       const list = selSet().slice();
       const i = list.indexOf(L.id);
@@ -2360,6 +2397,7 @@ function makeLayerRow(L, g){
       setSel(list, L.id);
     } else {
       setSel([L.id], L.id);
+      lastRowId = L.id;
     }
     renderAll();
   });
@@ -2367,24 +2405,27 @@ function makeLayerRow(L, g){
     const n = prompt('图层名称', L.name);
     if (n !== null && n.trim()){ pushUndo(); L.name = n.trim(); renderAll(); }
   });
+  /* 拖一行 = 拖它所在的整批：多选时整批走，单选时就是它自己 */
   row.addEventListener('dragstart', function(e){
-    dragId = L.id; row.classList.add('dragging');
+    const sel = selSet();
+    dragIds = (sel.length > 1 && sel.indexOf(L.id) >= 0) ? sel.slice() : [L.id];
+    row.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     try { e.dataTransfer.setData('text/plain', String(L.id)); } catch(_){}
   });
-  row.addEventListener('dragend', function(){ dragId = null; clearDropMarks(); renderLayerList(); });
+  row.addEventListener('dragend', function(){ dragIds = null; clearDropMarks(); renderLayerList(); });
   row.addEventListener('dragover', function(e){
-    if (dragId === null || dragId === L.id) return;
+    if (!dragIds || dragIds.indexOf(L.id) >= 0) return;
     e.preventDefault(); clearDropMarks();
     const r = row.getBoundingClientRect();
     row.classList.add((e.clientY - r.top) > r.height/2 ? 'dropafter' : 'dropbefore');
   });
   row.addEventListener('drop', function(e){
-    if (dragId === null || dragId === L.id) return;
+    if (!dragIds || dragIds.indexOf(L.id) >= 0) return;
     e.preventDefault(); e.stopPropagation();
     const r = row.getBoundingClientRect();
-    moveLayerRelative(dragId, L.id, (e.clientY - r.top) > r.height/2);
-    dragId = null; clearDropMarks();
+    moveBlockRelative(dragIds, { id: L.id }, (e.clientY - r.top) > r.height/2);
+    dragIds = null; clearDropMarks();
   });
   return row;
 }
@@ -2394,6 +2435,82 @@ function clearDropMarks(){
     el.classList.remove('dropbefore','dropafter');
   });
 }
+/* =========================================================
+   图层区框选 + 范围选择
+   ---------------------------------------------------------
+   框选：在列表空白处按下拖动，矩形碰到的行进入选择集。
+        行上按下仍然是排序拖拽（HTML5 drag），两者不打架 ——
+        这也是为什么框选只从空白起步：同一块区域不能既排序又框选。
+        列表底部留了 44px 空白，层数满了也能从这里起手。
+   范围：Shift + 点击某行 = 从上次点的那行到这一行全选（Ctrl 仍是逐个加减）。
+   ========================================================= */
+let lassoOn = false, lassoY0 = 0, lassoEl = null;
+let lastRowId = null;              // 范围选择的锚点
+
+function listPointY(e){
+  const r = listEl.getBoundingClientRect();
+  return e.clientY - r.top + listEl.scrollTop;
+}
+function ensureLasso(){
+  if (!lassoEl){
+    lassoEl = h('div', { class: 'lasso' });
+    listEl.appendChild(lassoEl);
+  }
+  return lassoEl;
+}
+function lassoPick(y0, y1){
+  const lo = Math.min(y0, y1), hi = Math.max(y0, y1);
+  const ids = [];
+  for (let i = 0; i < listEl.children.length; i++){
+    const row = listEl.children[i];
+    if (!row._L) continue;                       // 组头不参与框选
+    const top = row.offsetTop, bot = top + row.offsetHeight;
+    if (bot >= lo && top <= hi) ids.push(row._L.id);
+  }
+  setSel(ids, ids.length ? ids[ids.length - 1] : null);
+  syncLayerSel();                                // 只切 class，不重建行
+  renderStatus(); syncButtons();
+}
+function endLasso(){
+  if (!lassoOn) return;
+  lassoOn = false;
+  if (lassoEl) lassoEl.style.display = 'none';
+  renderAll();                                   // 松手后把属性面板补上
+}
+listEl.addEventListener('pointerdown', function(e){
+  if (e.button !== 0) return;
+  if (e.target.closest && e.target.closest('.li')) return;   // 行上交给排序 / 点击
+  if (!listEl.querySelector('.li')) return;
+  lassoOn = true;
+  lassoY0 = listPointY(e);
+  const el = ensureLasso();
+  el.style.display = 'block';
+  el.style.top = lassoY0 + 'px';
+  el.style.height = '0px';
+  try { listEl.setPointerCapture(e.pointerId); } catch(_){}
+  e.preventDefault();
+});
+listEl.addEventListener('pointermove', function(e){
+  if (!lassoOn) return;
+  const y = listPointY(e);
+  lassoEl.style.top = Math.min(y, lassoY0) + 'px';
+  lassoEl.style.height = Math.abs(y - lassoY0) + 'px';
+  lassoPick(lassoY0, y);
+});
+listEl.addEventListener('pointerup', endLasso);
+listEl.addEventListener('pointercancel', endLasso);
+window.addEventListener('pointerup', endLasso);
+
+/* 范围选择：锚点 -> 目标，中间的行全选 */
+function selectRange(anchorId, targetId){
+  const a = S.layers.findIndex(function(L){ return L.id === anchorId; });
+  const b = S.layers.findIndex(function(L){ return L.id === targetId; });
+  if (a < 0 || b < 0) return false;
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  setSel(S.layers.slice(lo, hi + 1).map(function(L){ return L.id; }), targetId);
+  return true;
+}
+
 /* =========================================================
    属性面板
    ========================================================= */
@@ -3062,6 +3179,17 @@ vp.addEventListener('pointerdown', function(e){
   /* Alt + 点击 = 穿透到下一层（矩形重叠时的选中手段） */
   const hit = hitLayer(im.x, im.y, e.altKey ? S.sel : null);
   if (hit){
+    /* Shift / Ctrl + 点击 = 在画布上直接增减选择，和图层面板里点行同义。
+       这一下不进入拖动：多选是「先选好，再拖」，和面板的行点击保持一致。 */
+    if (e.shiftKey || e.ctrlKey || e.metaKey){
+      const list = selSet().slice();
+      const i = list.indexOf(hit.id);
+      if (i < 0) list.push(hit.id);
+      else if (list.length > 1) list.splice(i, 1);
+      setSel(list, hit.id);
+      renderAll();
+      return;
+    }
     /* 点已在多选里的层：保留整组选择，只把主选中切过去 */
     if (!isSel(hit.id)) setSel([hit.id], hit.id);
     else S._sel = hit.id;
@@ -3547,129 +3675,79 @@ function clearAll(){
   renderAll();
   toast('已清空拉伸层');
 }
-/* 把一段长度切成 n 份，但每份大小随机不等（jitter=0 退化为等分）。
-   做法：给每份抽一个 1±0.9·jitter 的权重，按权重占比分配长度，再取整并保证严格递增。 */
-function randomCuts(total, n, jitter){
-  if (n <= 1) return [0, total];
-  const w = [];
-  let sum = 0;
-  for (let i = 0; i < n; i++){
-    const v = 1 + (Math.random()*2 - 1) * jitter * 0.9;
-    w.push(Math.max(0.05, v));
-    sum += Math.max(0.05, v);
-  }
-  const cuts = [0];
-  let acc = 0;
-  for (let i = 0; i < n; i++){
-    acc += w[i];
-    cuts.push(Math.round(acc / sum * total));
-  }
-  cuts[0] = 0;
-  cuts[n] = total;
-  for (let i = 1; i <= n; i++){          // 保证严格递增，至少留 1px
-    if (cuts[i] <= cuts[i-1]) cuts[i] = cuts[i-1] + 1;
-  }
-  return cuts;
-}
-/* 把切点转成 [起, 止] 区间；overlap>0 时每段向两侧外扩自身长度的一定比例，制造重叠 */
-function cutsToSegs(cuts, total, overlap){
-  const segs = [];
-  for (let i = 0; i < cuts.length - 1; i++){
-    let a = cuts[i], b = cuts[i+1];
-    if (overlap > 0){
-      const pad = Math.round((b - a) * overlap * 0.5);
-      a = Math.max(0, a - pad);
-      b = Math.min(total, b + pad);
-    }
-    segs.push([a, b]);
-  }
-  return segs;
-}
-function makeGrid(){
-  const cols = clamp(parseInt($('gridC').value) || 1, 1, 60);
-  const rows = clamp(parseInt($('gridR').value) || 1, 1, 60);
-  const jit  = clamp(parseFloat($('gridJit').value) || 0, 0, 100) / 100;
-  const ov   = clamp(parseFloat($('gridOv').value) || 0, 0, 60) / 100;
-  if (!S.src.canvas) return;
-  if (cols * rows > 900){ toast('最多 900 个格子'); return; }
-
-  pushUndo();
-  const xs = cutsToSegs(randomCuts(S.src.w, cols, jit), S.src.w, ov);
-  const ys = cutsToSegs(randomCuts(S.src.h, rows, jit), S.src.h, ov);
-
-  S.layers = []; S.nextId = 1;
-  let n = 1;
-  for (let r = 0; r < rows; r++){
-    for (let c = 0; c < cols; c++){
-      const L = makeLayer({ x: xs[c][0], y: ys[r][0], w: xs[c][1]-xs[c][0], h: ys[r][1]-ys[r][0] });
-      L.name = '拉伸层 ' + (n++);
-      S.layers.push(L);
-    }
-  }
-  S.sel = null;
-  renderAll();
-  const overlapNote = ov > 0 ? '，相邻重叠 ' + Math.round(ov*100) + '%' : '';
-  toast('已生成 ' + (cols*rows) + ' 个不等分格（随机度 ' + Math.round(jit*100) + '%' + overlapNote + '）');
-}
 
 /* =========================================================
-   随机框选
-   输入：宽/高范围（占画面尺寸百分比）、个数
-   处理：每层独立抽宽高与位置
-   输出：追加到图层栈顶
+   随机铺框
+   ---------------------------------------------------------
+   在源图上切出一组矩形：**铺满整张图、彼此不重叠**。
+   参数只有两个 —— 数量、大小差异。
+
+   做法是二叉切分：每次挑当前面积最大的一块，沿它的长边切一刀，
+   切点在中间附近抖动。「大小差异」就是这个抖动的幅度：
+   0 = 每一刀都从正中间切（块面尽量等大）；
+   100 = 切点可以在 10%~90% 之间乱跳（大小混排）。
+
+   和以前那个「随机网格」的区别：网格是先切列再切行，结果一眼能看出是格子；
+   这里每次切的是「当前最大的一块」，所以能出大小错落的版式，
+   而且切到第 n 块就停，天然满足「数量 = n」。
    ========================================================= */
-function boxSizeRange(){
-  const p = function(id, dft){ const v = parseFloat($(id).value); return isFinite(v) ? v : dft; };
-  let wMin = clamp(p('rbWMin', 8), 1, 100), wMax = clamp(p('rbWMax', 40), 1, 100);
-  let hMin = clamp(p('rbHMin', 20), 1, 100), hMax = clamp(p('rbHMax', 100), 1, 100);
-  if (wMin > wMax){ const t = wMin; wMin = wMax; wMax = t; }
-  if (hMin > hMax){ const t = hMin; hMin = hMax; hMax = t; }
-  return {
-    wMin: Math.max(2, S.src.w * wMin/100), wMax: Math.max(2, S.src.w * wMax/100),
-    hMin: Math.max(2, S.src.h * hMin/100), hMax: Math.max(2, S.src.h * hMax/100)
-  };
-}
-function clampIntoImage(r){
-  const w = clamp(Math.round(r.w), 2, S.src.w);
-  const h = clamp(Math.round(r.h), 2, S.src.h);
-  return {
-    w: w, h: h,
-    x: clamp(Math.round(r.x), 0, S.src.w - w),
-    y: clamp(Math.round(r.y), 0, S.src.h - h)
-  };
-}
-function randomBoxes(count){
-  if (!S.src.canvas) return [];
-  const R = boxSizeRange();
-  const out = [];
-  for (let i = 0; i < count; i++){
-    const w = R.wMin + Math.random() * (R.wMax - R.wMin);
-    const h = R.hMin + Math.random() * (R.hMax - R.hMin);
-    out.push(clampIntoImage({ w: w, h: h,
-      x: Math.random() * (S.src.w - w), y: Math.random() * (S.src.h - h) }));
+
+function tileSplit(w, h, n, variance){
+  w = Math.max(1, Math.round(w));
+  h = Math.max(1, Math.round(h));
+  n = clamp(Math.round(n), 1, 200);
+  const v = clamp(variance, 0, 100) / 100;
+
+  const out = [{ x: 0, y: 0, w: w, h: h }];
+  let guard = 0;
+  while (out.length < n && guard++ < n * 10){
+    /* 挑面积最大、且还切得动的一块 */
+    let bi = -1, ba = -1;
+    for (let i = 0; i < out.length; i++){
+      const r = out[i];
+      if (r.w < 4 && r.h < 4) continue;
+      const a = r.w * r.h;
+      if (a > ba){ ba = a; bi = i; }
+    }
+    if (bi < 0) break;                       // 已经切不动了（图太小 / 块太多）
+
+    const r = out.splice(bi, 1)[0];
+    const vertical = r.w >= r.h;             // 沿长边切，避免切出细长条
+    const len = vertical ? r.w : r.h;
+    if (len < 4){ out.push(r); break; }
+
+    const k = 0.5 + (Math.random() * 2 - 1) * 0.5 * v * 0.8;
+    const cut = clamp(Math.round(len * k), 2, len - 2);
+
+    if (vertical){
+      out.push({ x: r.x,         y: r.y, w: cut,     h: r.h });
+      out.push({ x: r.x + cut,   y: r.y, w: r.w - cut, h: r.h });
+    } else {
+      out.push({ x: r.x, y: r.y,         w: r.w, h: cut });
+      out.push({ x: r.x, y: r.y + cut,   w: r.w, h: r.h - cut });
+    }
   }
   return out;
 }
-function addBoxes(rects, label){
-  if (!rects.length) return;
-  pushUndo();
-  let last = null;
-  rects.forEach(function(r){
-    const L = makeLayer(r);
-    L.name = (label || '随机框') + ' ' + S.layers.length;
-    S.layers.push(L);
-    last = L;
-  });
-  S.sel = last ? last.id : null;
-  renderAll();
-}
-function doRandomBox(){
-  if (!S.src.canvas){ toast('先导入图片'); return; }
-  const n = clamp(parseInt($('rbN').value) || 1, 1, 50);
-  addBoxes(randomBoxes(n), '随机框');
-  toast('已随机生成 ' + n + ' 个框');
-}
 
+/* 铺出来的框替换掉现有图层 —— 它们是一整套铺满画面的版式，混着别的层没有意义 */
+function doTiling(){
+  if (!S.src.canvas){ toast('先导入图片'); return; }
+  const n = clamp(parseInt($('tileN').value) || 6, 1, 60);
+  const v = clamp(parseFloat($('tileVar').value) || 0, 0, 100);
+
+  const rects = tileSplit(S.src.w, S.src.h, n, v);
+  pushUndo();
+  S.layers = [];
+  rects.forEach(function(r, i){
+    const L = makeLayer(r);
+    L.name = '铺框 ' + (i + 1);
+    S.layers.push(L);
+  });
+  setSel([]);
+  renderAll();
+  toast('已铺 ' + rects.length + ' 个框 · 覆盖全图、互不重叠');
+}
 
 /* =========================================================
    M7 导出
@@ -3820,9 +3898,9 @@ function applyProjectData(d, opt){
     setSel([]); S.undoStack = []; S.redoStack = [];
     pushUndo(true);
     $('btnExport').disabled = false;
-    $('btnGrid').disabled = false;
-    $('btnGridRe').disabled = false;
-    $('btnRandBox').disabled = false;
+    $('btnTile').disabled = false;
+    $('btnTileRe').disabled = false;
+    
     $('btnRandAll').disabled = false;
     $('btnRandOrder').disabled = false;
     $('srcInfo').replaceChildren(
@@ -4014,7 +4092,7 @@ function newProject(){
   S.undoStack = []; S.redoStack = [];
   S.src = { canvas:null, ctx:null, w:0, h:0, name:'', version: S.src.version + 1 };
   hint.classList.remove('hide');
-  ['btnExport','btnGrid','btnGridRe','btnRandBox','btnRandAll','btnRandOrder'].forEach(function(id){
+  ['btnExport','btnTile','btnTileRe','btnRandAll','btnRandOrder'].forEach(function(id){
     const el = $(id);
     if (el) el.disabled = true;
   });
@@ -4069,9 +4147,8 @@ $('btn100').onclick = function(){
 $('zIn').onclick = function(){ zoomCenter(1.2); renderAll(); };
 $('zOut').onclick = function(){ zoomCenter(1/1.2); renderAll(); };
 $('zFit').onclick = function(){ fitView(); renderAll(); };
-$('btnGrid').onclick = makeGrid;
-$('btnGridRe').onclick = makeGrid;
-$('btnRandBox').onclick = doRandomBox;
+$('btnTile').onclick = doTiling;
+$('btnTileRe').onclick = doTiling;
 $('btnClear').onclick = clearAll;
 $('btnImg').onclick = function(){
   if (!S.src.canvas){ toast('先导入主图'); return; }
@@ -4106,13 +4183,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.modal [data-close]'), f
   b.onclick = function(){ const m = b.closest('.modal'); if (m) m.classList.remove('show'); };
 });
 $('srcVisible').onchange = function(){ S.showSrc = this.checked; render(); };
-/* 静态面板的四个数值行：源图不透明度、随机强度走模型，网格两参数由 makeGrid 现读 */
+/* 静态面板的数值行：源图不透明度、随机强度走模型；铺框两个参数由 doTiling 现读 */
 bindNum('srcOpacity', function(v){ S.srcOpacity = v/100; });
 bindNum('randStr',   function(v){ S.randStrength = v; });
-bindNum('gridJit',   function(){});
-bindNum('gridOv',    function(){});
-bindNum('gridC',     function(){});
-bindNum('gridR',     function(){});
+bindNum('tileN',     function(){});
+bindNum('tileVar',   function(){});
 bindAllScrubs(document);
 $('btnRandAll').onclick = randomizeAll;
 $('btnRandOrder').onclick = reseedAll;
@@ -4317,26 +4392,6 @@ propsEl.addEventListener('toggle', function(e){
   if (d && d.dataset && d.dataset.grp) grpOpen[d.dataset.grp] = d.open;
 }, true);
 
-/* 左侧「随机网格 / 随机框选」两个面板用分段控件切换 */
-(function initAutoSeg(){
-  const seg = $('autoSeg');
-  if (!seg) return;
-  const panes = {
-    grid: $('paneGrid'),
-    rand: $('paneRand')
-  };
-  seg.addEventListener('click', function(e){
-    const b = e.target.closest('button[data-pane]');
-    if (!b) return;
-    Array.prototype.forEach.call(seg.children, function(x){
-      x.classList.toggle('on', x === b);
-    });
-    for (const k in panes){
-      if (panes[k]) panes[k].style.display = (k === b.getAttribute('data-pane')) ? '' : 'none';
-    }
-  });
-})();
-
 /* 拉伸方向：分段控件是门面，真正的值仍存在 select#newDir 里（工程文件与快捷键都读它） */
 function syncDirSeg(){
   const sel = $('newDir');
@@ -4460,10 +4515,7 @@ window.__tool = {
   buildExportCanvas: buildExportCanvas,
   buildSeq: buildSeq,
   randSeed: randSeed,
-  randomCuts: randomCuts,
-  cutsToSegs: cutsToSegs,
-  makeGrid: makeGrid,
-  randomBoxes: randomBoxes,
+  tileSplit: tileSplit,
   sampleLine: sampleLine,
   copyLayer: copyLayer,
   createImageLayer: createImageLayer,
@@ -4472,6 +4524,7 @@ window.__tool = {
   projectData: projectData,
   groupSelected: groupSelected,
   mergeSelectedShapes: mergeSelectedShapes,
+  moveBlockRelative: moveBlockRelative,
   home: {
     enter: enterEditor, go: goHome, create: newProject,
     save: saveToLibrary, render: renderHome,
