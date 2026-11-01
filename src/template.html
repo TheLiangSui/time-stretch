@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>时间拉伸 · Anton Repponen 风格化工具</title>
+<style>
+<!-- @@CSS@@ -->
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="i-undo" viewBox="0 0 16 16"><path d="M6 4 2.6 7.4 6 10.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.6 7.4h6.8a3.7 3.7 0 0 1 0 7.4H7.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 16 16"><path d="M10 4l3.4 3.4L10 10.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.4 7.4H6.6a3.7 3.7 0 0 0 0 7.4h2.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-fit" viewBox="0 0 16 16"><path d="M2.2 6V2.2H6M10 2.2h3.8V6M13.8 10v3.8H10M6 13.8H2.2V10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.2v1.7M8 13.1v1.7M1.2 8h1.7M13.1 8h1.7M3.2 3.2l1.2 1.2M11.6 11.6l1.2 1.2M12.8 3.2l-1.2 1.2M4.4 11.6l-1.2 1.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13.4 9.8A5.9 5.9 0 0 1 6.2 2.6a5.9 5.9 0 1 0 7.2 7.2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 16 16"><path d="M2 4.6h12M2 11.4h12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="6" cy="4.6" r="1.9" fill="var(--bg-panel)" stroke="currentColor" stroke-width="1.4"/><circle cx="10.4" cy="11.4" r="1.9" fill="var(--bg-panel)" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-help" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.1a1.85 1.85 0 1 1 2.45 1.75c-.42.16-.62.52-.62.95v.28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8.03" cy="11.5" r=".78" fill="currentColor"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 16 16"><path d="M6 3.6 10.4 8 6 12.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.3 8S3.7 3.8 8 3.8 14.7 8 14.7 8 12.3 12.2 8 12.2 1.3 8 1.3 8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="1.9" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-eyeoff" viewBox="0 0 16 16"><path d="M1.3 8S3.7 3.8 8 3.8c1 0 1.9.24 2.7.62M14.7 8s-2.4 4.2-6.7 4.2c-1 0-1.9-.24-2.7-.62" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M2.6 13.4 13.4 2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.4" y="7.1" width="9.2" height="6.6" rx="1.5" fill="currentColor"/><path d="M5.7 7.1V5.3a2.3 2.3 0 0 1 4.6 0v1.8" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-dice" viewBox="0 0 16 16"><rect x="2.6" y="2.6" width="10.8" height="10.8" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.8" cy="5.8" r=".85" fill="currentColor"/><circle cx="8" cy="8" r=".85" fill="currentColor"/><circle cx="10.2" cy="10.2" r=".85" fill="currentColor"/></symbol>
+  <symbol id="i-img" viewBox="0 0 16 16"><rect x="2.1" y="3.1" width="11.8" height="9.8" rx="1.9" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.7" cy="6.4" r="1.15" fill="currentColor"/><path d="M2.6 11.6l3.3-3.1 2.5 2.2 2.2-2 2.8 2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 2.4v7.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5 7.2 8 10.2l3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.6 12.9h10.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-save" viewBox="0 0 16 16"><path d="M2.8 2.6h7.3l3.1 3.1v7.7a1 1 0 0 1-1 1H3.8a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.4 2.6v3.3h4.4V2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="5" y="9" width="6" height="4.4" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-open" viewBox="0 0 16 16"><path d="M1.9 12.6V4.3h4.2l1.4 1.7h6.6v1.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M1.9 12.6l1.9-5.3h11.3l-1.9 5.3z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 16 16"><path d="M2.8 4.6h10.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5.6 4.6V3.1h4.8v1.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M4.2 4.6l.7 8.4h6.2l.7-8.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 16 16"><path d="M8 13.6V3.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.6 6.8 8 3.4l3.4 3.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-dn" viewBox="0 0 16 16"><path d="M8 2.4v10.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.6 9.2 8 12.6l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+
+  <!-- 参数图标：13px 下要能认出来，所以只用最少的笔画 -->
+  <symbol id="i-ax-x" viewBox="0 0 16 16"><path d="M3 8h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5.2 5.4 2.6 8l2.6 2.6M10.8 5.4 13.4 8l-2.6 2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-ax-y" viewBox="0 0 16 16"><path d="M8 3v10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5.4 5.2 8 2.6l2.6 2.6M5.4 10.8 8 13.4l2.6-2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-ax-w" viewBox="0 0 16 16"><path d="M3 4.6v6.8M13 4.6v6.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M3 8h10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-ax-h" viewBox="0 0 16 16"><path d="M4.6 3h6.8M4.6 13h6.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 3v10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-offset" viewBox="0 0 16 16"><path d="M2 8h12M8 2v12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="10.5" cy="8" r="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-grid2" viewBox="0 0 16 16"><rect x="2.6" y="2.6" width="10.8" height="10.8" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2.6 8h10.8M8 2.6v10.8" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="i-image" viewBox="0 0 16 16"><rect x="2.4" y="3.4" width="11.2" height="9.2" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="6" cy="6.6" r="1.1" fill="currentColor"/><path d="M3.4 11.2 6.6 8l2 2 1.8-1.6 2.2 2.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wand" viewBox="0 0 16 16"><path d="M3 13 10.4 5.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9.2 4.4 11 2.6M12.4 7.6 14.2 5.8M10.6 9.4 12.4 11.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12.6" cy="3.4" r="1.1" fill="currentColor"/></symbol>
+  <symbol id="i-hue" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="1.7 1.8" opacity=".75"/><path d="M8 2.5A5.5 5.5 0 0 1 13.5 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 16 16"><path d="M8 2.2c2.9 3.7 4.4 5.4 4.4 7.4a4.4 4.4 0 0 1-8.8 0c0-2 1.5-3.7 4.4-7.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="i-temp" viewBox="0 0 16 16"><path d="M8 2.2a1.9 1.9 0 0 1 1.9 1.9v5.1a3.4 3.4 0 1 1-3.8 0V4.1A1.9 1.9 0 0 1 8 2.2z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="11.2" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 16 16"><path d="M9.2 1.8 4.2 9h3.4l-.8 5.2L12 7H8.4z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+  <symbol id="i-block2" viewBox="0 0 16 16"><rect x="2.4" y="2.4" width="4.6" height="4.6" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2.4" width="4.6" height="4.6" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="5.7" y="9" width="4.6" height="4.6" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="i-seg2" viewBox="0 0 16 16"><path d="M2.4 5h3.2M7.2 5h1.6M10.4 5h3.2M2.4 11h1.6M5.6 11h3.2M10.4 11h3.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-alpha" viewBox="0 0 16 16"><rect x="2.6" y="2.6" width="10.8" height="10.8" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2.6 8h5.4v5.4H3.6A1 1 0 0 1 2.6 12.4z" fill="currentColor" opacity=".85"/></symbol>
+  <symbol id="i-overlap" viewBox="0 0 16 16"><rect x="2.4" y="2.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="6.4" y="6.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="i-seed" viewBox="0 0 16 16"><circle cx="5.4" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="i-group" viewBox="0 0 16 16"><path d="M2.4 5.4V3.4a1 1 0 0 1 1-1h2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10.6 2.4h2a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M13.6 10.6v2a1 1 0 0 1-1 1h-2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5.4 13.6h-2a1 1 0 0 1-1-1v-2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 16 16"><path d="M2.6 2.6h6.2v4.2h4.6v6.6H6.6V9.2H2.6z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+  <symbol id="i-home" viewBox="0 0 16 16"><path d="M2.4 7.2 8 2.6l5.6 4.6v6a1 1 0 0 1-1 1h-3v-4h-3.2v4h-3a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<div id="home">
+  <div class="home-rail">
+    <div class="home-brand"><span class="mark"></span><b>时间拉伸</b></div>
+    <button id="homeNew" class="primary"><svg class="ic"><use href="#i-plus"/></svg>新建工程</button>
+    <button id="homeOpenFile"><svg class="ic"><use href="#i-open"/></svg>打开工程文件</button>
+    <div class="home-tip">工程保存在本机项目库里，关闭软件不会丢。<br><br>「打开工程文件」读的是导出的 .json。</div>
+  </div>
+  <div class="home-main">
+    <h1>最近工程</h1>
+    <div class="home-grid" id="homeGrid"></div>
+    <div class="home-empty" id="homeEmpty">还没有保存过的工程。<br>点左侧「新建工程」开始，或打开一个 .json 工程文件。</div>
+  </div>
+</div>
+
+<header>
+  <div class="brand"><span class="mark"></span><b>时间拉伸</b><span>Anton Repponen</span></div>
+  <div class="sep"></div>
+  <button id="btnOpen"><svg class="ic"><use href="#i-img"/></svg>导入</button>
+  <button id="btnExport" class="primary" disabled><svg class="ic"><use href="#i-down"/></svg>导出</button>
+  <div class="sep"></div>
+  <button id="btnUndo" class="sq ghost" disabled title="撤销 (Ctrl+Z)" aria-label="撤销"><svg class="ic"><use href="#i-undo"/></svg></button>
+  <button id="btnRedo" class="sq ghost" disabled title="重做 (Ctrl+Shift+Z)" aria-label="重做"><svg class="ic"><use href="#i-redo"/></svg></button>
+  <div class="sep"></div>
+  <button id="btnFit" class="ghost" title="适应窗口 (Ctrl+0)"><svg class="ic"><use href="#i-fit"/></svg><span>适应</span></button>
+  <button id="btn100" class="ghost" title="原始像素 (Ctrl+1)">1:1</button>
+  <div class="spacer"></div>
+  <button id="btnHome" class="sq ghost" title="回到首页" aria-label="首页"><svg class="ic"><use href="#i-home"/></svg></button>
+  <button id="btnSaveProj" class="ghost" title="保存到项目库 (Ctrl+S)"><svg class="ic"><use href="#i-save"/></svg><span>保存</span></button>
+  <button id="btnOpenProj" class="ghost" title="打开工程 (Ctrl+O)"><svg class="ic"><use href="#i-open"/></svg><span>打开</span></button>
+  <div class="sep"></div>
+  <button id="btnTheme" class="sq ghost" title="切换明暗主题" aria-label="切换主题"><svg class="ic"><use href="#i-moon"/></svg></button>
+  <button id="btnSettings" class="sq ghost" title="设置 (Ctrl+,)" aria-label="设置"><svg class="ic"><use href="#i-gear"/></svg></button>
+  <button id="btnHelp" class="ghost" title="快捷键"><svg class="ic"><use href="#i-help"/></svg></button>
+</header>
+
+<aside class="left">
+  <div class="sect">
+    <div class="sect-h"><span class="lbl">自动铺框</span><span class="hint">批量生成矩形</span></div>
+    <div class="seg" id="autoSeg" style="margin-bottom:9px">
+      <button data-pane="grid" class="on">随机网格</button>
+      <button data-pane="rand">随机框选</button>
+    </div>
+
+    <div id="paneGrid">
+      <div class="cells" style="margin-bottom:6px">
+        <div class="cell"><label for="gridC">列</label>
+          <div class="num"><svg class="cell-ico" data-scrub="gridC" data-def="5"><use href="#i-ax-w"/></svg><input type="number" id="gridC" min="1" max="60" step="1" value="5"></div></div>
+        <div class="cell"><label for="gridR">行</label>
+          <div class="num"><svg class="cell-ico" data-scrub="gridR" data-def="1"><use href="#i-ax-h"/></svg><input type="number" id="gridR" min="1" max="60" step="1" value="1"></div></div>
+      </div>
+      <div class="cells">
+        <div class="cell"><label for="gridJit">尺寸随机</label><div class="num"><svg class="cell-ico" data-scrub="gridJit" data-def="45"><use href="#i-grid2"/></svg><input type="number" id="gridJit" min="0" max="100" step="1" value="45"><span class="sfx">%</span></div></div>
+        <div class="cell"><label for="gridOv">相邻重叠</label><div class="num"><svg class="cell-ico" data-scrub="gridOv" data-def="0"><use href="#i-overlap"/></svg><input type="number" id="gridOv" min="0" max="60" step="1" value="0"><span class="sfx">%</span></div></div>
+      </div>
+      <div class="mini">0 = 完全等分；越大格子宽窄差越夸张。</div>
+      <div class="row" style="display:flex; gap:6px; margin-top:8px">
+        <button id="btnGrid" class="primary" style="flex:1" disabled>生成网格</button>
+        <button id="btnGridRe" class="sq" title="换一批随机切法" disabled aria-label="换一批"><svg class="ic"><use href="#i-dice"/></svg></button>
+      </div>
+    </div>
+
+    <div id="paneRand" style="display:none">
+      <div class="pair">
+        <label>宽度</label><input type="number" id="rbWMin" value="8" min="1" max="100">
+        <span>–</span><input type="number" id="rbWMax" value="40" min="1" max="100"><span>%</span>
+      </div>
+      <div class="pair">
+        <label>高度</label><input type="number" id="rbHMin" value="20" min="1" max="100">
+        <span>–</span><input type="number" id="rbHMax" value="100" min="1" max="100"><span>%</span>
+      </div>
+      <div class="pair" style="grid-template-columns:34px 1fr 20px">
+        <label>个数</label>
+        <input type="number" id="rbN" value="1" min="1" max="50">
+        <span>个</span>
+      </div>
+      <div class="mini">宽高按画面尺寸的百分比抽取。</div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnRandBox" class="primary" style="flex:1" disabled><svg class="ic"><use href="#i-dice"/></svg>随机框选</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect" style="padding-bottom:8px">
+    <div class="sect-h" style="margin-bottom:7px"><span class="lbl">新框默认方向</span><span class="hint">Shift 临时反转</span></div>
+    <div class="seg" id="dirSeg">
+      <button data-dir="h">↔ 水平</button>
+      <button data-dir="v">↕ 垂直</button>
+    </div>
+    <select id="newDir" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; overflow:hidden">
+      <option value="h">水平</option>
+      <option value="v">垂直</option>
+    </select>
+  </div>
+
+  <div class="list-h">
+    <div class="sect-h" style="margin:0"><span class="lbl">图层</span></div>
+    <div class="row" style="display:flex; gap:2px; align-items:center">
+      <button id="btnUp" class="sq ghost" title="上移一层 (])" aria-label="上移一层" disabled><svg class="ic"><use href="#i-up"/></svg></button>
+      <button id="btnDown" class="sq ghost" title="下移一层 ([)" aria-label="下移一层" disabled><svg class="ic"><use href="#i-dn"/></svg></button>
+      <button id="btnImg" class="sq ghost" title="导入图片为新图层" aria-label="导入图片"><svg class="ic"><use href="#i-image"/></svg></button>
+      <button id="btnMerge" class="sq ghost" title="合并形状 (Ctrl+M)" aria-label="合并形状"><svg class="ic"><use href="#i-merge"/></svg></button>
+      <button id="btnGroup" class="sq ghost" title="成组 / 解散 (Ctrl+G)" aria-label="成组"><svg class="ic"><use href="#i-group"/></svg></button>
+      <div class="sep" style="height:14px; margin:0 3px"></div>
+      <button id="btnClear" class="sq ghost del" title="删除全部图层" aria-label="清空图层"><svg class="ic"><use href="#i-trash"/></svg></button>
+    </div>
+  </div>
+  <div class="layerlist" id="layerlist"></div>
+  <div class="rz" id="rzL" title="拖动调整宽度 · 双击复位"></div>
+</aside>
+
+<main id="viewport">
+  <canvas id="cv"></canvas>
+  <div id="hint">
+    <div class="box">
+      <div class="art"></div>
+      <h2>导入一张照片开始</h2>
+      <p>把图片拖到窗口，或从本地选择</p>
+      <button id="btnHintOpen" class="primary lg">选择图片…</button>
+      <p class="keys">拖拽框选 · <kbd>Alt</kbd> 穿透 · 滚轮平移 · <kbd>Ctrl</kbd>+滚轮缩放</p>
+    </div>
+  </div>
+  <div id="zoombar">
+    <button id="zOut" aria-label="缩小">−</button>
+    <span class="z" id="zVal">100%</span>
+    <button id="zIn" aria-label="放大">+</button>
+    <div class="sep" style="height:14px; margin:0 2px"></div>
+    <button id="zFit">适应</button>
+  </div>
+  <div id="status">—</div>
+  <div id="nav"><canvas id="navcv"></canvas><div class="navhint">拖动平移</div></div>
+</main>
+
+<aside class="right">
+  <div class="props-wrap" style="padding:0">
+    <div id="props"></div>
+  </div>
+  <div class="grp" style="border-top:1px solid var(--line)" id="srcGrp">
+    <div class="grp-body" style="padding-top:12px">
+      <div class="sect-h" style="margin-bottom:9px"><span class="lbl">源图层</span></div>
+      <label class="chk"><input type="checkbox" id="srcVisible" checked> 显示原图</label>
+      <div class="cells"><div class="cell"><label for="srcOpacity">不透明度</label><div class="num"><svg class="cell-ico" data-scrub="srcOpacity" data-def="100"><use href="#i-alpha"/></svg><input type="number" id="srcOpacity" min="0" max="100" step="1" value="100"><span class="sfx">%</span></div></div></div>
+      <div class="mini" id="srcInfo">未载入图片</div>
+    </div>
+  </div>
+  <div class="grp" style="border-top:1px solid var(--line)">
+    <div class="grp-body" style="padding-top:12px">
+      <div class="sect-h" style="margin-bottom:9px"><span class="lbl">全局随机</span></div>
+      <div class="cells"><div class="cell"><label for="randStr">随机强度</label><div class="num"><svg class="cell-ico" data-scrub="randStr" data-def="60"><use href="#i-dice"/></svg><input type="number" id="randStr" min="0" max="100" step="1" value="60"><span class="sfx">%</span></div></div></div>
+      <div class="mini">决定随机时饱和度 / 冷暖度的摆动幅度。</div>
+      <div class="btnrow"><button id="btnRandAll" disabled><svg class="ic"><use href="#i-dice"/></svg>全部随机</button></div>
+      <div class="btnrow"><button id="btnRandOrder" disabled><svg class="ic"><use href="#i-dice"/></svg>重掷种子</button></div>
+    </div>
+  </div>
+  <div class="rz" id="rzR" title="拖动调整宽度 · 双击复位"></div>
+</aside>
+
+<div class="modal" id="modalExport">
+  <div class="cardm">
+    <button class="modal-x" data-close aria-label="关闭">×</button>
+    <div class="cardm-body">
+    <h3>导出合并图</h3>
+    <p class="sub-title">把源图层与全部拉伸层合成为一张图片</p>
+    <div class="field"><label>格式</label>
+      <select id="exFmt"><option value="image/png">PNG（无损）</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option></select>
+    </div>
+    <div class="field"><label>质量</label><input type="range" id="exQ" min="50" max="100" value="92"></div>
+    <div class="field"><label>背景</label>
+      <select id="exBg"><option value="#ffffff">白色</option><option value="transparent">透明</option><option value="#000000">黑色</option></select>
+    </div>
+    <div class="field"><label>倍率</label>
+      <select id="exScale"><option value="1">1x（原始尺寸）</option><option value="2">2x</option><option value="0.5">0.5x</option></select>
+    </div>
+    <label class="chk" style="margin-top:10px"><input type="checkbox" id="exSrc" checked> 包含源图层（原图）</label>
+    <div class="info" id="exInfo"></div>
+    </div>
+    <div class="btns">
+      <button id="exCopy">复制到剪贴板</button>
+      <button id="exCancel">取消</button>
+      <button id="exGo" class="primary">导出</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalHelp">
+  <div class="cardm" style="width:600px">
+    <button class="modal-x" data-close aria-label="关闭">×</button>
+    <div class="cardm-body">
+    <h3>快捷键与操作</h3>
+    <p class="sub-title">全部操作都可以用键盘完成</p>
+    <table class="keys">
+      <tr><td>拖拽空白处</td><td>新建矩形拉伸层（按住 <kbd>Shift</kbd> 反向拉伸）</td></tr>
+      <tr><td>点击矩形 / 图层行</td><td>选中该层</td></tr>
+      <tr><td><kbd>Alt</kbd> + 点击矩形</td><td>穿透到下一层（矩形重叠时用）</td></tr>
+      <tr><td>拖拽矩形内部</td><td>移动（自动吸附 6px；锁定的层不能拖）</td></tr>
+      <tr><td>拖拽 8 个控制点</td><td>改变大小</td></tr>
+      <tr><td><b>左右拖数值前的小图标</b></td><td>连续改数值（<kbd>Shift</kbd> ×10、<kbd>Alt</kbd> ×0.1、双击回默认值）</td></tr>
+      <tr><td><kbd>Delete</kbd></td><td>删除选中层</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></td><td>复制 / 剪切 / 粘贴图层（连续粘贴自动错开）</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd></td><td>从系统剪贴板粘贴图片</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>原地复制一层 / 导入图片</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>撤销 / 重做（焦点在参数框里也有效）</td></tr>
+      <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>图层下沉 / 上浮</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+点击图层行 / 组头</td><td>多选（成组与整体移动的前提）</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td><td>成组 / 解散合集</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>M</kbd></td><td>合并选中的多个图层为一个形状</td></tr>
+      <tr><td><kbd>E</kbd> / <kbd>L</kbd></td><td>显示隐藏 / 锁定位置</td></tr>
+      <tr><td><kbd>R</kbd></td><td>随机选中层的饱和度 / 冷暖度</td></tr>
+      <tr><td>方向键 / <kbd>Shift</kbd>+方向键</td><td>选中层位移 1px / 10px；<b>未选中时改为平移画布</b></td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>退出输入框 / 取消选中 / 取消正在绘制的框</td></tr>
+      <tr><td><b>Ctrl</b>+滚轮</td><td>以指针为中心缩放</td></tr>
+      <tr><td>滚轮 / <kbd>Shift</kbd>+滚轮</td><td>上下平移 / 左右平移画布</td></tr>
+      <tr><td><b>右键拖拽</b> / <kbd>空格</kbd>拖拽 / 中键拖拽</td><td>平移画布</td></tr>
+      <tr><td>拖动右下角小地图</td><td>平移画布（最省事）</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>0</kbd> / <kbd>Ctrl</kbd>+<kbd>1</kbd></td><td>适应窗口 / 原始像素（<kbd>Shift</kbd>+<kbd>1</kbd> / <kbd>Shift</kbd>+<kbd>0</kbd> 同效）</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>\</kbd></td><td>隐藏 / 恢复两侧面板，只看画面</td></tr>
+      <tr><td><kbd>?</kbd></td><td>打开这个面板</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>保存到项目库 / 导出 .json</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>打开工程文件</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>,</kbd></td><td>打开设置（默认目录）</td></tr>
+    </table>
+    </div>
+    <div class="btns"><button id="helpOk" class="primary">知道了</button></div>
+  </div>
+</div>
+
+<div class="modal" id="modalSettings">
+  <div class="cardm" style="width:620px">
+    <button class="modal-x" data-close aria-label="关闭">×</button>
+    <div class="cardm-body">
+    <h3>设置</h3>
+    <p class="sub-title">界面偏好与默认目录</p>
+    <div class="setrow" style="grid-template-columns:76px 1fr; margin-bottom:10px">
+      <label>数值调整</label>
+      <div class="seg" id="segNumMode">
+        <button data-num="icon">拖小图标</button>
+        <button data-num="bar">拖数据条</button>
+        <button data-num="both">两者都有</button>
+      </div>
+    </div>
+    <div class="setrow" style="grid-template-columns:76px 1fr; margin-bottom:14px">
+      <label>界面尺寸</label>
+      <div class="seg" id="segUiScale">
+        <button data-ui="1">标准</button>
+        <button data-ui="1.15">大</button>
+        <button data-ui="1.3">更大</button>
+      </div>
+    </div>
+    <div class="info" id="setNote"></div>
+    <div class="setrow">
+      <label>图片导入</label>
+      <input type="text" id="set_importDir" readonly placeholder="（未设置，使用系统默认）">
+      <button data-pick="importDir">选择…</button>
+      <button data-clear="importDir" class="sq" title="清除" aria-label="清除">✕</button>
+    </div>
+    <div class="setrow">
+      <label>导出图片</label>
+      <input type="text" id="set_exportDir" readonly placeholder="（未设置，使用系统默认）">
+      <button data-pick="exportDir">选择…</button>
+      <button data-clear="exportDir" class="sq" title="清除" aria-label="清除">✕</button>
+    </div>
+    <div class="setrow">
+      <label>工程文件</label>
+      <input type="text" id="set_projectDir" readonly placeholder="（未设置，使用系统默认）">
+      <button data-pick="projectDir">选择…</button>
+      <button data-clear="projectDir" class="sq" title="清除" aria-label="清除">✕</button>
+    </div>
+    <div class="info" style="margin-top:14px">
+      桌面版会把设置存到 <code>%APPDATA%\时间拉伸\settings.json</code>，重开依然有效。<br>
+      浏览器版没有文件系统权限，只能记住选择但无法改变系统对话框的起始目录。
+    </div>
+    </div>
+    <div class="btns">
+      <button id="setReset">全部清除</button>
+      <button id="setClose" class="primary">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="filePick" accept="image/*" style="display:none">
+<input type="file" id="imgPick" accept="image/png,image/jpeg,image/webp" style="display:none">
+<input type="file" id="projPick" accept=".json,application/json" style="display:none">
+
+<script>
+<!-- @@JS@@ -->
+</script>
+</body>
+</html>

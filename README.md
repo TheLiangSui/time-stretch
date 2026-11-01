@@ -99,32 +99,52 @@ npm start                         # 不打包，直接以 Electron 调试
 
 ### 自测
 
-320 条断言，覆盖取样位置、方块分组、调色、撤销、图层栈、下拉 / 弹窗 / 缩放条等 UI 行为，用本机 Edge 无头模式跑：
+340 条断言，覆盖取样位置、方块分组、调色、撤销、图层栈、下拉 / 弹窗 / 缩放条、渲染调度等 UI 行为，用本机 Edge 无头模式跑：
 
 ```bash
-node dev/selftest-gen.js          # index.html → _selftest.html
-node dev/selftest-run.js _selftest.html
+npm run check                     # 构建 + 生成测试页 + 跑全套
 ```
 
 ```
-TOTAL=320 FAILS=0 VERDICT=ALL_PASS
+TOTAL=340 FAILS=0 VERDICT=ALL_PASS
 ```
 
-生成器还支持故意破坏（`node dev/selftest-gen.js broken`）—— 把采样列强制挪到矩形左边缘，用来验证测试本身抓得住错误，而不是一路绿灯。
+生成器还支持故意破坏（`node _gen_selftest.js broken`）—— 把采样列强制挪到矩形左边缘，用来验证测试本身抓得住错误，而不是一路绿灯。
+
+**跑不满会报错。** `_run_selftest.js` 有三道闸门：用例数低于下限、页面出现未捕获异常 → `VERDICT=TRUNCATED` 且 exit 2；有 FAIL → exit 1。没有这道闸门时，一段测试静默不跑的表现是「零 FAIL、总数腰斩」，排查代价极高。
 
 ---
 
 ## 目录
 
 ```
-index.html          网页版 / 桌面版共用的全部界面与逻辑（单文件，零外部依赖）
+src/template.html   外壳结构（CSS / JS 用占位标记）
+src/styles.css      全部样式
+src/js/*.js         27 个按职责分节的模块（状态 / 取样 / 图层数据 / 图层视图 / 手势 / 输入 / IO ...）
+dev/build-single.js 把 src/ 拼回一个 index.html
+index.html          构建产物：网页版与桌面版共用的单文件（零外部依赖，别手改）
 main.js             Electron 主进程：窗口、原生另存为、菜单、设置持久化
 preload.js          contextBridge 暴露最小 IPC 接口
 package.json        Electron 配置
 icon.ico            应用图标（7 种尺寸）
-dev/                构建与自测脚本
-docs/技术规格.md     完整技术规格 + 逐版本迭代修复记录
+dev/                构建、自测、静态检查、DOM 快照、布局体检脚本
+docs/               技术规格 + 重构记录
 ```
+
+### 改代码的工作流
+
+```bash
+# 只改 src/ 下的文件；index.html 是构建产物，手改会在下次构建时被覆盖
+npm run check        # 静态检查 → 构建 → 生成测试页 → 跑 340 项（任一步失败即非 0 退出）
+npm run lint         # 只跑静态检查
+```
+
+静态检查用 ESLint 的「查错」规则（`no-undef` / `no-redeclare` / `no-dupe-keys` / …），
+先把 27 个模块拼成一份再查 —— 它们是同一个 IIFE 的片段，逐文件解析不出来。
+检查器自带自检：先喂人造错误确认规则真的会报，再查代码。
+
+面板类代码用 `h()`（`src/js/00b-DOM构造.js`）直接建节点，**不要**再拼 HTML 字符串：
+拼字符串要靠 id 再找回来，写错一个字就是 `null`，且不会报错。
 
 ---
 
@@ -164,3 +184,25 @@ Get-FileHash .\TimeStretch-v2.0.0-win32-x64.zip -Algorithm SHA256
 ---
 
 <sub>**English** — Time Stretch: a browser + Windows desktop tool that takes the centered vertical pixel column of a rectangle you drag on a photo and stretches it horizontally to fill that rectangle, recreating Anton Repponen's *Time Stretch* concept photography. Single-file HTML, no external resources, images never leave your machine. [Live demo](https://theliangsui.github.io/time-stretch/) · [Windows build](https://github.com/TheLiangSui/time-stretch/releases/latest). MIT licensed.</sub>
+
+## v3 新增：色相 / 图片图层 / 抠图（2026-11-01）
+
+**色相**：色彩组里多一格「色相」（-180°~180°，可拖图标）。走画布的 `filter: hue-rotate()`，
+一次 drawImage 完成，不做逐像素 HSL —— 逐像素在 4000px 图上每次调参都要重算，太慢。
+代价：CSS 的 hue-rotate 是矩阵近似，饱和色旋转后会掉亮度（纯红转 120° 得到 rgb(0,113,0)，
+不是纯绿），需要时用「饱和度」补回来。
+
+**图片图层**：图层列表头的图片按钮导入 png/jpg/webp，按原尺寸落进画布（超过画布就缩到 90%
+以内、居中），保留透明通道。图片层不走取样拉伸，面板里三个拉伸组自动隐藏；色彩、不透明度、
+混合模式、合并形状照常可用。
+
+位图用「不可枚举属性 + id 注册表」存：`img` 不参与 JSON，撤销快照不会背上几 MB base64；
+撤销/复制后从 `IMG_REG` 按 id 挂回去。存工程时单独转 dataURL，读盘时先并行解码再建层。
+
+**自动抠图（实验）**：外圈 6% 取样估背景色与离散度，容差随背景离散度自适应，再从四条边做
+连通洪水，最后低分辨率蒙版平滑放大当 alpha。
+
+为什么不是 AI 模型：u2netp / RMBG / ISNet 都试过路线，权重 4.6MB 起，GitHub Release 资源
+在 file:// 页面被 CORS 拦死（实测 `Failed to fetch`），HuggingFace 源又常 502，jsDelivr 只
+能取仓库/npm 里的文件。要接模型得自带一个 models 目录一起分发，破坏了「单文件自包含」。
+所以先用本地算法顶上，标成实验功能。它只对「主体与背景色差明显」的图有效。

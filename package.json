@@ -19,11 +19,17 @@
     "icon": "node dev/make-icon.js",
     "build": "node dev/build-portable.js",
     "build:packager": "node dev/make-icon.js && electron-packager . 时间拉伸 --platform=win32 --arch=x64 --out=dist --overwrite --asar --icon=icon.ico --app-version=2.0.0 --ignore=\"^/dev($|/)\" --ignore=\"^/docs($|/)\" --ignore=\"^/dist($|/)\"",
-    "test": "node dev/selftest-gen.js && node dev/selftest-run.js _selftest.html"
+    "test": "node _gen_selftest.js && node _run_selftest.js _selftest.html 1",
+    "check": "node dev/lint.js --selftest && node dev/check-css-vars.js && node dev/build-single.js && node _gen_selftest.js && node _run_selftest.js _selftest.html 1",
+    "build:single": "node dev/build-single.js",
+    "lint": "node dev/lint.js --selftest",
+    "check:css": "node dev/check-css-vars.js"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",
     "electron": "^44.7.2",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
     "resedit": "^2.0.3"
   }
 }

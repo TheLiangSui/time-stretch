@@ -317,6 +317,7 @@ main.panning{cursor:grabbing}
   pointer-events:none; text-align:center; transition:opacity .18s var(--ease);
 }
 #hint.hide{opacity:0}
+#hint.hide{pointer-events:none; visibility:hidden}
 #hint .box{
   pointer-events:auto;
   border-radius:12px; padding:28px 40px 22px;
@@ -403,6 +404,13 @@ main.dropping::after{
   font-variant-numeric:tabular-nums;
 }
 .grp-body{padding:2px 10px 10px}
+#props.img-layer details[data-grp="stretch"],
+#props.img-layer details[data-grp="block"],
+#props.img-layer details[data-grp="order"]{display:none}
+#props .img-note{
+  margin:0 0 8px; padding:6px 8px; border-radius:var(--r1);
+  background:var(--ac-soft); color:var(--t2); font-size:10.5px; line-height:1.6;
+}
 /* 展开 / 收起的高度过渡。
    Chrome 131+ 的 ::details-content + interpolate-size 可以让 height:auto 参与过渡，
    比过去「量高度再写死 max-height」干净得多。不支持时退回一个淡入位移动画。 */
@@ -766,6 +774,9 @@ kbd{
   <symbol id="i-ax-h" viewBox="0 0 16 16"><path d="M4.6 3h6.8M4.6 13h6.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 3v10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 2"/></symbol>
   <symbol id="i-offset" viewBox="0 0 16 16"><path d="M2 8h12M8 2v12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="10.5" cy="8" r="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
   <symbol id="i-grid2" viewBox="0 0 16 16"><rect x="2.6" y="2.6" width="10.8" height="10.8" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2.6 8h10.8M8 2.6v10.8" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="i-image" viewBox="0 0 16 16"><rect x="2.4" y="3.4" width="11.2" height="9.2" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="6" cy="6.6" r="1.1" fill="currentColor"/><path d="M3.4 11.2 6.6 8l2 2 1.8-1.6 2.2 2.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wand" viewBox="0 0 16 16"><path d="M3 13 10.4 5.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9.2 4.4 11 2.6M12.4 7.6 14.2 5.8M10.6 9.4 12.4 11.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12.6" cy="3.4" r="1.1" fill="currentColor"/></symbol>
+  <symbol id="i-hue" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="1.7 1.8" opacity=".75"/><path d="M8 2.5A5.5 5.5 0 0 1 13.5 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
   <symbol id="i-drop" viewBox="0 0 16 16"><path d="M8 2.2c2.9 3.7 4.4 5.4 4.4 7.4a4.4 4.4 0 0 1-8.8 0c0-2 1.5-3.7 4.4-7.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
   <symbol id="i-temp" viewBox="0 0 16 16"><path d="M8 2.2a1.9 1.9 0 0 1 1.9 1.9v5.1a3.4 3.4 0 1 1-3.8 0V4.1A1.9 1.9 0 0 1 8 2.2z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="11.2" r="1.3" fill="currentColor"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 16 16"><path d="M9.2 1.8 4.2 9h3.4l-.8 5.2L12 7H8.4z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
@@ -875,10 +886,11 @@ kbd{
   </div>
 
   <div class="list-h">
-    <div class="sect-h" style="margin:0"><span class="lbl">图层</span><span class="hint">上 = 顶层</span></div>
+    <div class="sect-h" style="margin:0"><span class="lbl">图层</span></div>
     <div class="row" style="display:flex; gap:2px; align-items:center">
       <button id="btnUp" class="sq ghost" title="上移一层 (])" aria-label="上移一层" disabled><svg class="ic"><use href="#i-up"/></svg></button>
       <button id="btnDown" class="sq ghost" title="下移一层 ([)" aria-label="下移一层" disabled><svg class="ic"><use href="#i-dn"/></svg></button>
+      <button id="btnImg" class="sq ghost" title="导入图片为新图层" aria-label="导入图片"><svg class="ic"><use href="#i-image"/></svg></button>
       <button id="btnMerge" class="sq ghost" title="合并形状 (Ctrl+M)" aria-label="合并形状"><svg class="ic"><use href="#i-merge"/></svg></button>
       <button id="btnGroup" class="sq ghost" title="成组 / 解散 (Ctrl+G)" aria-label="成组"><svg class="ic"><use href="#i-group"/></svg></button>
       <div class="sep" style="height:14px; margin:0 3px"></div>
@@ -1059,6 +1071,7 @@ kbd{
 
 <div id="toast"></div>
 <input type="file" id="filePick" accept="image/*" style="display:none">
+<input type="file" id="imgPick" accept="image/png,image/jpeg,image/webp" style="display:none">
 <input type="file" id="projPick" accept=".json,application/json" style="display:none">
 
 <script>
@@ -1104,6 +1117,102 @@ const statusEl = document.getElementById('status');
 const listEl   = document.getElementById('layerlist');
 const propsEl  = document.getElementById('props');
 
+/* 静态壳元素的查询缓存。
+   按钮、开关这些 id 在页面生命周期里不变，每次重绘都去 getElementById 是白跑；
+   面板里的控件会被整体重建，所以命中缓存前先确认节点还挂在文档上。 */
+const _idCache = {};
+function $(id){
+  const hit = _idCache[id];
+  if (hit && hit.isConnected) return hit;
+  const el = document.getElementById(id);
+  if (el) _idCache[id] = el;
+  return el;
+}
+
+/* =========================================================
+   DOM 构造器
+   ---------------------------------------------------------
+   以前面板是「拼字符串 → innerHTML → getElementById 找回」。
+   两条路都靠字符串里的 id 对齐，写错一个字就是 null，
+   而且要拿一个子元素得再做一次全局查询。
+
+   改成用函数直接建节点：节点在手里，绑定就地完成，
+   不经过字符串，也不经过 id —— 名字改了、位置挪了都不会失联。
+
+   属性约定：
+     class / id / text / html / style / data / on / attrs
+     value：直接写 property（input 的初值，不进 DOM 属性）
+     其余键：当普通属性；值为 true 写空串，false / null / undefined 跳过
+   ========================================================= */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function h(tag, props){
+  const el = document.createElement(tag);
+  applyProps(el, props);
+  appendKids(el, Array.prototype.slice.call(arguments, 2));
+  return el;
+}
+
+/* 建 SVG 节点必须用命名空间，否则只是个认不出来的 HTML 元素 */
+function hs(tag, props){
+  const el = document.createElementNS(SVG_NS, tag);
+  applyProps(el, props);
+  appendKids(el, Array.prototype.slice.call(arguments, 2));
+  return el;
+}
+
+/* 图标：<svg class="..."><use href="#id"/></svg> */
+function icon(id, cls){
+  const s = hs('svg', cls ? { class: cls } : null);
+  s.appendChild(hs('use', { href: '#' + id }));
+  return s;
+}
+
+function applyProps(el, props){
+  if (!props) return;
+  for (const k in props){
+    const v = props[k];
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'class')       el.setAttribute('class', v);   // SVG 的 className 只读，统一走属性
+    else if (k === 'text')   el.textContent = v;
+    else if (k === 'html')   el.innerHTML = v;
+    else if (k === 'value')  el.value = v;
+    else if (k === 'on'){ for (const ev in v) el.addEventListener(ev, v[ev]); }
+    else if (k === 'data'){ for (const d in v) el.dataset[d] = v[d]; }
+    else if (k === 'style'){
+      /* 字符串原样写属性（不被 CSSOM 重新序列化成 "8px 0px 0px"），对象走逐条设置 */
+      if (typeof v === 'string') el.setAttribute('style', v);
+      else for (const p in v) el.style.setProperty(p, v[p]);
+    } else if (k === 'attrs'){ for (const a in v) el.setAttribute(a, v[a]); }
+    else if (v === true) el.setAttribute(k, '');
+    else el.setAttribute(k, v);
+  }
+}
+
+function appendKids(el, kids){
+  for (let i = 0; i < kids.length; i++){
+    const k = kids[i];
+    if (k === null || k === undefined || k === false) continue;
+    if (Array.isArray(k)) appendKids(el, k);
+    else if (k instanceof Node) el.appendChild(k);
+    else el.appendChild(document.createTextNode(String(k)));
+  }
+}
+
+/* 包一层 .cells：多个参数单元自动排成两列 */
+function cells(){
+  return h.apply(null, ['div', { class: 'cells' }].concat(Array.prototype.slice.call(arguments)));
+}
+/* 一行说明文字 */
+function info(){
+  return h.apply(null, ['div', { class: 'info' }].concat(Array.prototype.slice.call(arguments)));
+}
+/* 带标题的单控件行（下拉用） */
+function stack(labelText, forId, ctrl){
+  return h('div', { class: 'stack' },
+    h('label', forId ? { for: forId } : null, labelText), ctrl);
+}
+
 /* =========================================================
    UI 主题 / 画布配色
    chrome 保持中性，让画面颜色不被 UI 干扰；
@@ -1131,7 +1240,7 @@ function applyTheme(t, silent){
   PAL = buildPal();
   const u = document.querySelector('#btnTheme use');
   if (u) u.setAttribute('href', PAL.light ? '#i-sun' : '#i-moon');
-  const b = document.getElementById('btnTheme');
+  const b = $('btnTheme');
   if (b) b.title = PAL.light ? '切换到深色主题' : '切换到浅色主题';
   if (!silent){ try { localStorage.setItem('ts.theme', PAL.light ? 'light' : 'dark'); } catch(_){} }
   render(); renderStatus();
@@ -1177,11 +1286,11 @@ function applyUiPrefs(silent){
   render();
 }
 function syncUiSegs(){
-  const sn = document.getElementById('segNumMode');
+  const sn = $('segNumMode');
   if (sn) Array.prototype.forEach.call(sn.children, function(b){
     b.classList.toggle('on', b.getAttribute('data-num') === UI_PREF.num);
   });
-  const su = document.getElementById('segUiScale');
+  const su = $('segUiScale');
   if (su) Array.prototype.forEach.call(su.children, function(b){
     b.classList.toggle('on', parseFloat(b.getAttribute('data-ui')) === UI_PREF.ui);
   });
@@ -1194,7 +1303,7 @@ document.addEventListener('input', function(e){
    工具函数
    ========================================================= */
 function toast(msg){
-  const t = document.getElementById('toast');
+  const t = $('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toast._t);
   toast._t = setTimeout(function(){ t.classList.remove('show'); }, 1900);
@@ -1252,18 +1361,18 @@ function ingestImage(img, name){
   S.layers = []; S.sel = null; S.hover = null;
   S.groups = {}; S.nextGid = 1;
   S.undoStack = []; S.redoStack = [];
-  const homeEl = document.getElementById('home');
+  const homeEl = $('home');
   if (homeEl) homeEl.classList.remove('show');
   pushUndo(true);
 
-  document.getElementById('btnExport').disabled = false;
-  document.getElementById('btnGrid').disabled = false;
-  document.getElementById('btnGridRe').disabled = false;
-  document.getElementById('btnRandBox').disabled = false;
-  document.getElementById('btnRandAll').disabled = false;
-  document.getElementById('btnRandOrder').disabled = false;
-  document.getElementById('srcInfo').innerHTML =
-    escapeHtml(S.src.name) + '<br>' + S.src.w + ' × ' + S.src.h + ' px';
+  $('btnExport').disabled = false;
+  $('btnGrid').disabled = false;
+  $('btnGridRe').disabled = false;
+  $('btnRandBox').disabled = false;
+  $('btnRandAll').disabled = false;
+  $('btnRandOrder').disabled = false;
+  $('srcInfo').replaceChildren(
+    S.src.name, h('br'), S.src.w + ' × ' + S.src.h + ' px');
   hint.classList.add('hide');
 
   fitView();
@@ -1408,17 +1517,30 @@ function buildStripe(L, sl){
 function stripeFor(L, sl){
   const N = clamp(Math.round(L.block), 1, 100);
   if (N <= 1 && L.order === 'none' && L.sat === 0 && L.warm === 0) return null;
-  const key = [S.src.version, sl.dir, sl.sx, sl.sy, sl.len, N, L.order,
-               L.shufAmt, L.shufBlock, L.seed, L.interSeg, L.sat, L.warm].join(',');
+  /* 缓存键 = 源图版本 + 这次取样到哪一条 + 图层自身全部字段。
+     以前这里是手写清单，加一个像素参数忘了登记 → 改了值但画面不动，且极难查。
+     现在用 stableStr 自动收录（_col 这类下划线字段自动排除）。
+     stableStr 一次约几微秒，一屏几十层也不到一帧的零头。 */
+  const key = S.src.version + '|' + sl.dir + '|' + sl.sx + '|' + sl.sy + '|' +
+              sl.len + '|' + stableStr(L);
   if (L._col && L._col.key === key) return L._col.canvas;
   const c = buildStripe(L, sl);
   L._col = { key:key, canvas:c };
   return c;
 }
 
+/* 位图铺满矩形：保持比例、居中裁切（和 CSS 的 object-fit:cover 同理） */
+function drawCover(g, img, x, y, w, h){
+  const iw = img.width || img.naturalWidth, ih = img.height || img.naturalHeight;
+  if (!iw || !ih) return;
+  const k = Math.max(w / iw, h / ih);
+  const dw = iw * k, dh = ih * k;
+  g.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+}
 function drawStretchedLayer(g, L){
   const s = S.src;
   if (!s.canvas || L.w <= 0 || L.h <= 0) return;
+  if (L.kind === 'image' && !L.img) return;
   const x = Math.round(L.x), y = Math.round(L.y);
   const w = Math.round(L.w), h = Math.round(L.h);
   if (w <= 0 || h <= 0) return;
@@ -1438,10 +1560,17 @@ function drawStretchedLayer(g, L){
   } else {
     g.beginPath(); g.rect(x, y, w, h); g.clip();
   }
-  g.imageSmoothingEnabled = false;               // 硬边：纯色铺满，不做插值
-  const stripe = stripeFor(L, sl);
-  if (stripe) g.drawImage(stripe, 0, 0, sl.cw, sl.ch, x, y, w, h);
-  else        g.drawImage(s.canvas, sl.sx, sl.sy, sl.sw, sl.sh, x, y, w, h);
+  /* 色相：交给画布的 filter，一次 drawImage 搞定，比逐像素改 HSL 便宜得多 */
+  if (L.hue) g.filter = 'hue-rotate(' + L.hue + 'deg)';
+  if (L.kind === 'image'){
+    g.imageSmoothingEnabled = true;
+    drawCover(g, L.img, x, y, w, h);
+  } else {
+    g.imageSmoothingEnabled = false;             // 硬边：纯色铺满，不做插值
+    const stripe = stripeFor(L, sl);
+    if (stripe) g.drawImage(stripe, 0, 0, sl.cw, sl.ch, x, y, w, h);
+    else        g.drawImage(s.canvas, sl.sx, sl.sy, sl.sw, sl.sh, x, y, w, h);
+  }
   g.restore();
 }
 
@@ -1463,15 +1592,85 @@ function compositeInto(g){
    M2/M6 屏幕渲染
    ========================================================= */
 let dpr = 1;
+
+/* ---------- 渲染调度 ----------
+   以前 renderAll() 一律「画布 + 图层列表 + 属性面板 + 状态栏」全套重建：
+   点一下图层就要重画所有缩略图（50 层 = 50 次 canvas 重绘），
+   正在展开的下拉也会被无关的刷新掐掉。
+
+   现在先算「签名」：签名不变就不重建，只同步选中态。
+   签名里带对象的唯一序号 oid()：撤销 / 打开工程后图层是新对象，
+   即使字段一模一样也必须重建，否则行里的事件还挂在旧对象上。 */
+const OBJ_ID = new WeakMap();
+let OBJ_SEQ = 1;
+function oid(o){
+  let v = OBJ_ID.get(o);
+  if (v === undefined){ v = OBJ_SEQ++; OBJ_ID.set(o, v); }
+  return v;
+}
+let sigLayers = null;      // 图层列表的签名（不含选中态）
+let sigProps = null;       // 属性面板的签名
+
+/* 稳定的对象指纹：把图层 / 合集序列化成一串可比对的文本。
+   以 _ 开头的键（_col 这类像素缓存）不参与 —— 它们会变，但不影响显示。
+   注意这里是「自动收录所有字段」，不是手写清单：
+   将来加参数不用回来登记，也不会出现「改了值但面板不刷新」。 */
+function stableStr(o){
+  return JSON.stringify(o, function(k, v){
+    if (k && k.charAt(0) === '_') return undefined;
+    return v;
+  });
+}
+
+function layerListSig(){
+  if (!S.src.canvas) return 'empty';
+  const p = ['v' + S.src.version, S.showSrc ? 1 : 0, S.src.w + 'x' + S.src.h];
+  for (let i = 0; i < S.layers.length; i++){
+    const L = S.layers[i];
+    p.push(oid(L) + ':' + stableStr(L));      // oid = 对象身份，字段全等也得重建
+  }
+  for (const k in S.groups){
+    const g = S.groups[k];
+    p.push('g' + oid(g) + ':' + stableStr(g));
+  }
+  return p.join('|');
+}
+
+function propsSig(L){
+  if (!L) return 'none';
+  return oid(L) + ':' + S.src.w + 'x' + S.src.h + ':' + stableStr(L);
+}
+
+/* 只有选中变了：切 class，不重建（缩略图一个都不用重画） */
+function syncLayerSel(){
+  const sel = selSet();
+  for (let i = 0; i < listEl.children.length; i++){
+    const row = listEl.children[i];
+    if (row._L){
+      row.classList.toggle('sel', sel.indexOf(row._L.id) >= 0);
+    } else if (row._G){
+      const ms = S.layers.filter(function(L){ return L.gid === row._G.id; });
+      row.classList.toggle('sel',
+        ms.length > 0 && ms.every(function(L){ return sel.indexOf(L.id) >= 0; }));
+    }
+  }
+}
+
 function renderAll(){
-  render(); renderLayerList(); renderProps(); renderStatus(); syncButtons();
-  syncDirSeg(); fillAllRanges();
+  render();
+  if (layerListSig() !== sigLayers) renderLayerList();
+  else syncLayerSel();
+
+  const L = getSel();
+  if (propsSig(L) !== sigProps) renderProps();
+
+  renderStatus(); syncButtons(); syncDirSeg(); fillAllRanges();
 }
 function syncButtons(){
-  document.getElementById('btnUndo').disabled = S.undoStack.length === 0;
-  document.getElementById('btnRedo').disabled = S.redoStack.length === 0;
-  document.getElementById('btnUp').disabled = !S.sel;
-  document.getElementById('btnDown').disabled = !S.sel;
+  $('btnUndo').disabled = S.undoStack.length === 0;
+  $('btnRedo').disabled = S.redoStack.length === 0;
+  $('btnUp').disabled = !S.sel;
+  $('btnDown').disabled = !S.sel;
 }
 
 function render(){
@@ -1509,8 +1708,8 @@ function render(){
 /* =========================================================
    导航小地图：显示整图 + 各图层轮廓 + 当前视口矩形，拖它即可平移
    ========================================================= */
-const navEl = document.getElementById('nav');
-const navCv = document.getElementById('navcv');
+const navEl = $('nav');
+const navCv = $('navcv');
 const navCtx = navCv.getContext('2d');
 let navDrag = false;
 
@@ -1718,19 +1917,6 @@ function setSel(ids, primary){
   S._sel = p;               // 直接写后备字段，避免 setter 把多选收敛成单选
 }
 function isSel(id){ return selSet().indexOf(id) >= 0; }
-function toggleSel(id){
-  const list = selSet().slice();
-  const i = list.indexOf(id);
-  if (i >= 0){
-    if (list.length === 1) return;      // 至少留一个
-    list.splice(i, 1);
-    setSel(list, S._sel === id ? list[list.length-1] : S._sel);
-  } else {
-    list.push(id);
-    setSel(list, id);
-  }
-}
-
 function makeLayer(r){
   return {
     id: uid(),
@@ -1747,6 +1933,10 @@ function makeLayer(r){
     interSeg: 4,          // 间序段数
     sat: 0,               // 饱和度 -100..100
     warm: 0,              // 冷暖度 -100..100
+    hue: 0,               // 色相 -180..180 度（绕色环旋转）
+    kind: 'stretch',      // stretch = 从源图取样拉伸；image = 自带位图（导入 / 抠图）
+    img: null,            // kind=image 时的位图（canvas，运行期字段，存盘转 dataURL）
+    imgName: '',
     opacity: 1,
     blend: 'source-over',
     visible: true,
@@ -1760,7 +1950,7 @@ function hitLayer(ix, iy, cycleFromId){
   const hits = [];
   for (let i = S.layers.length-1; i >= 0; i--){
     const L = S.layers[i];
-    if (L.locked) continue;
+    if (L.locked || L.visible === false) continue;
     if (ix >= L.x && ix <= L.x+L.w && iy >= L.y && iy <= L.y+L.h) hits.push(L);
   }
   if (!hits.length) return null;
@@ -1820,14 +2010,20 @@ function endLive(){ liveKey = null; }
 function restore(snap){
   const d = JSON.parse(snap);
   S.layers = d.layers; S.sel = d.sel; S.nextId = d.nextId;
+  S.layers.forEach(function(L){
+    if (L.kind === 'image'){
+      const cv = IMG_REG.get(L.id);
+      if (cv) Object.defineProperty(L, 'img', { value: cv, writable: true, enumerable: false, configurable: true });
+    }
+  });
   S.selIds = d.selIds || (d.sel ? [d.sel] : []);
   S.groups = d.groups || {};
   S.nextGid = d.nextGid || 1;
   S.showSrc = d.showSrc; S.srcOpacity = d.srcOpacity;
   S.randStrength = (d.randStrength === undefined) ? 60 : d.randStrength;
-  document.getElementById('srcVisible').checked = S.showSrc;
-  document.getElementById('srcOpacity').value = Math.round(S.srcOpacity*100);
-  document.getElementById('randStr').value = S.randStrength;
+  $('srcVisible').checked = S.showSrc;
+  $('srcOpacity').value = Math.round(S.srcOpacity*100);
+  $('randStr').value = S.randStrength;
 }
 function undo(){
   if (!S.undoStack.length) return;
@@ -1843,96 +2039,13 @@ function redo(){
 }
 
 /* =========================================================
-   M5 图层面板
+   图层结构操作
+   ---------------------------------------------------------
+   动的是数据：数组顺序、gid、parts。不画界面 ——
+   改完自己调 renderAll()，面板靠签名判断要不要重建。
    ========================================================= */
 let dragId = null;
-/* 图层缩略图：把该层实际采样到的那条像素带画进小方块，
-   一眼就能认出「这一层是什么效果」，不必靠读名字。 */
-const THUMB_W = 44, THUMB_H = 56;
-function paintThumb(cv, L){
-  const g = cv.getContext('2d');
-  g.clearRect(0, 0, cv.width, cv.height);
-  if (!S.src.canvas) return;
-  g.imageSmoothingEnabled = false;
-  if (!L){                                   // 源图层：整图等比缩进
-    const k = Math.min(cv.width / S.src.w, cv.height / S.src.h);
-    const w = Math.max(1, Math.round(S.src.w * k)), h = Math.max(1, Math.round(S.src.h * k));
-    g.imageSmoothingEnabled = true;
-    g.drawImage(S.src.canvas, Math.round((cv.width-w)/2), Math.round((cv.height-h)/2), w, h);
-    return;
-  }
-  const x = Math.round(L.x), y = Math.round(L.y);
-  const w = Math.max(1, Math.round(L.w)), h = Math.max(1, Math.round(L.h));
-  const sl = sampleLine(L, x, y, w, h);
-  if (L.parts && L.parts.length > 1){
-    const kx = cv.width / w, ky = cv.height / h;
-    const path = new Path2D();
-    for (let i = 0; i < L.parts.length; i++){
-      const p = L.parts[i];
-      path.rect(p.x * kx, p.y * ky, p.w * kx, p.h * ky);
-    }
-    g.save(); g.clip(path);
-    const st0 = stripeFor(L, sl);
-    if (st0) g.drawImage(st0, 0, 0, sl.cw, sl.ch, 0, 0, cv.width, cv.height);
-    else g.drawImage(S.src.canvas, sl.sx, sl.sy, sl.sw, sl.sh, 0, 0, cv.width, cv.height);
-    g.restore();
-    return;
-  }
-  const stripe = stripeFor(L, sl);
-  if (stripe) g.drawImage(stripe, 0, 0, sl.cw, sl.ch, 0, 0, cv.width, cv.height);
-  else g.drawImage(S.src.canvas, sl.sx, sl.sy, sl.sw, sl.sh, 0, 0, cv.width, cv.height);
-}
-function makeThumb(L){
-  const c = document.createElement('canvas');
-  c.width = THUMB_W; c.height = THUMB_H;
-  paintThumb(c, L);
-  return c;
-}
-function makeGroupRow(g){
-  const members = S.layers.filter(function(L){ return L.gid === g.id; });
-  const allSel = members.length > 0 && members.every(function(L){ return isSel(L.id); });
-  const row = document.createElement('div');
-  row.className = 'li grp-row' + (allSel ? ' sel' : '');
-  row.innerHTML =
-    '<span class="gtog' + (g.collapsed ? '' : ' open') + '" title="展开 / 收起">' +
-      '<svg class="ic-s"><use href="#i-chev"/></svg></span>' +
-    '<span class="gico"><svg class="ic-s"><use href="#i-group"/></svg></span>' +
-    '<span class="txt"><span class="nm">' + escapeHtml(g.name) + '</span>' +
-      '<span class="meta">合集 · ' + members.length + ' 层</span></span>' +
-    '<span class="eye ' + (g.visible ? 'on' : 'off') + '" title="显示 / 隐藏整组">' +
-      '<svg class="ic-s"><use href="' + (g.visible ? '#i-eye' : '#i-eyeoff') + '"/></svg></span>';
 
-  row.querySelector('.gtog').addEventListener('click', function(e){
-    e.stopPropagation();
-    g.collapsed = !g.collapsed;
-    renderLayerList();
-  });
-  row.querySelector('.eye').addEventListener('click', function(e){
-    e.stopPropagation();
-    pushUndo();
-    g.visible = !g.visible;
-    members.forEach(function(L){ L.visible = g.visible; });
-    renderAll();
-  });
-  row.addEventListener('click', function(e){
-    if (e.ctrlKey || e.metaKey || e.shiftKey){
-      members.forEach(function(L){ if (!isSel(L.id)) S.selIds.push(L.id); });
-      if (members.length) S._sel = members[members.length-1].id;
-    } else {
-      setSel(members.map(function(L){ return L.id; }),
-             members.length ? members[members.length-1].id : null);
-    }
-    renderAll();
-  });
-  row.addEventListener('dblclick', function(e){
-    if (e.target.closest('.gtog, .eye')) return;
-    const n = prompt('合集名称', g.name);
-    if (n !== null && n.trim()){ pushUndo(); g.name = n.trim(); renderAll(); }
-  });
-  return row;
-}
-
-/* 成组：把选中的层在数组里挪到一起（顺序不变），共用同一个 gid */
 function groupSelected(){
   const ids = selSet();
   if (ids.length < 2){ toast('至少选中两层才能成组（Ctrl / Shift + 点击图层行）'); return; }
@@ -2010,116 +2123,6 @@ function mergeSelectedShapes(){
   toast('已把 ' + members.length + ' 个图层合并成 1 个形状');
 }
 
-function renderLayerList(){
-  listEl.innerHTML = '';
-  if (!S.src.canvas){
-    listEl.innerHTML = '<div class="empty">尚未载入图片。</div>';
-    return;
-  }
-
-  const srcRow = document.createElement('div');
-  srcRow.className = 'li';
-  srcRow.innerHTML = '<span class="th"></span>' +
-    '<span class="txt"><span class="nm src">源图层</span><span class="meta">原图 · ' +
-      (S.showSrc ? '可见' : '已隐藏') + '</span></span>' +
-    '<span class="eye ' + (S.showSrc ? 'on' : 'off') + '" title="显示 / 隐藏原图">' +
-      '<svg class="ic-s"><use href="' + (S.showSrc ? '#i-eye' : '#i-eyeoff') + '"/></svg></span>';
-  srcRow.querySelector('.th').appendChild(makeThumb(null));
-  srcRow.querySelector('.eye').addEventListener('click', function(e){
-    e.stopPropagation();
-    S.showSrc = !S.showSrc;
-    const cb = document.getElementById('srcVisible');
-    if (cb) cb.checked = S.showSrc;
-    render(); renderLayerList();
-  });
-  srcRow.addEventListener('click', function(){ setSel([]); renderAll(); });
-  listEl.appendChild(srcRow);
-
-  const seenG = {};
-  for (let i = S.layers.length-1; i >= 0; i--){
-    const L = S.layers[i];
-    const g = L.gid ? S.groups[L.gid] : null;
-
-    /* 迭代方向是「顶 → 底」，所以第一次遇到某个合集的成员时，
-       就是它最上面那个成员，组头插在这里 */
-    if (g && !seenG[g.id]){
-      seenG[g.id] = 1;
-      listEl.appendChild(makeGroupRow(g));
-    }
-    if (g && g.collapsed) continue;          // 折叠时只留组头
-
-    const row = document.createElement('div');
-    row.className = 'li' + (isSel(L.id) ? ' sel' : '') + (g ? ' in-grp' : '');
-    row.draggable = true;
-    let tag = (L.dir === 'v') ? '↕ 垂直' : '↔ 水平';
-    if (L.block > 1) tag += ' · 块 ' + L.block;
-    else if (L.order !== 'none') tag += (L.order === 'shuffle' ? ' · 乱序' : ' · 间序');
-    if (L.sampleOff) tag += ' · 偏移 ' + (L.sampleOff > 0 ? '+' : '') + L.sampleOff;
-    if (L.parts && L.parts.length) tag += ' · 合并 ' + L.parts.length + ' 块';
-    row.innerHTML =
-      '<span class="th"></span>' +
-      '<span class="txt"><span class="nm">'+escapeHtml(L.name)+'</span>' +
-      '<span class="meta">'+tag+'</span></span>' +
-      '<span class="lk' + (L.locked ? ' on' : '') + '" title="' + (L.locked ? '已锁定，点击解锁' : '锁定位置') + '">' +
-        '<svg class="ic-s"><use href="#i-lock"/></svg></span>' +
-      '<span class="eye '+(L.visible?'on':'off')+'" title="显示 / 隐藏"><svg class="ic-s"><use href="' +
-        (L.visible ? '#i-eye' : '#i-eyeoff') + '"/></svg></span>';
-    row.querySelector('.th').appendChild(makeThumb(L));
-    row.querySelector('.eye').addEventListener('click', function(e){
-      e.stopPropagation();
-      pushUndo(); L.visible = !L.visible; renderAll();
-    });
-    row.querySelector('.lk').addEventListener('click', function(e){
-      e.stopPropagation();
-      pushUndo();
-      L.locked = !L.locked;
-      renderAll();
-      toast(L.locked ? '已锁定位置（画布上点不中它）' : '已解锁位置');
-    });
-    /* 点击 = 单选；Ctrl / Shift + 点击 = 增减选 */
-    row.addEventListener('click', function(e){
-      if (e.ctrlKey || e.metaKey || e.shiftKey){
-        const list = selSet().slice();
-        const i = list.indexOf(L.id);
-        if (i < 0) list.push(L.id);
-        else if (list.length > 1) list.splice(i, 1);
-        setSel(list, L.id);
-      } else {
-        setSel([L.id], L.id);
-      }
-      renderAll();
-    });
-    row.addEventListener('dblclick', function(){
-      const n = prompt('图层名称', L.name);
-      if (n !== null && n.trim()){ pushUndo(); L.name = n.trim(); renderAll(); }
-    });
-    row.addEventListener('dragstart', function(e){
-      dragId = L.id; row.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      try { e.dataTransfer.setData('text/plain', String(L.id)); } catch(_){}
-    });
-    row.addEventListener('dragend', function(){ dragId = null; clearDropMarks(); renderLayerList(); });
-    row.addEventListener('dragover', function(e){
-      if (dragId === null || dragId === L.id) return;
-      e.preventDefault(); clearDropMarks();
-      const r = row.getBoundingClientRect();
-      row.classList.add((e.clientY - r.top) > r.height/2 ? 'dropafter' : 'dropbefore');
-    });
-    row.addEventListener('drop', function(e){
-      if (dragId === null || dragId === L.id) return;
-      e.preventDefault(); e.stopPropagation();
-      const r = row.getBoundingClientRect();
-      moveLayerRelative(dragId, L.id, (e.clientY - r.top) > r.height/2);
-      dragId = null; clearDropMarks();
-    });
-    listEl.appendChild(row);
-  }
-}
-function clearDropMarks(){
-  listEl.querySelectorAll('.dropbefore,.dropafter').forEach(function(el){
-    el.classList.remove('dropbefore','dropafter');
-  });
-}
 function moveLayerRelative(fromId, toId, placeAfterInList){
   const from = S.layers.findIndex(function(L){ return L.id === fromId; });
   if (from < 0) return;
@@ -2141,6 +2144,257 @@ function shiftLayer(dir){   // +1 上浮（数组后移），-1 下沉
 }
 
 /* =========================================================
+   图层面板：视图
+   ---------------------------------------------------------
+   结构操作在 10-图层结构操作.js。这里只管「怎么画一行」。
+   ========================================================= */
+/* 图层缩略图：把该层实际采样到的那条像素带画进小方块，
+   一眼就能认出「这一层是什么效果」，不必靠读名字。 */
+const THUMB_W = 44, THUMB_H = 56;
+function paintThumb(cv, L){
+  const g = cv.getContext('2d');
+  g.clearRect(0, 0, cv.width, cv.height);
+  if (!S.src.canvas) return;
+  g.imageSmoothingEnabled = false;
+  if (!L){                                   // 源图层：整图等比缩进
+    const k = Math.min(cv.width / S.src.w, cv.height / S.src.h);
+    const w = Math.max(1, Math.round(S.src.w * k)), h = Math.max(1, Math.round(S.src.h * k));
+    g.imageSmoothingEnabled = true;
+    g.drawImage(S.src.canvas, Math.round((cv.width-w)/2), Math.round((cv.height-h)/2), w, h);
+    return;
+  }
+  const x = Math.round(L.x), y = Math.round(L.y);
+  const w = Math.max(1, Math.round(L.w)), h = Math.max(1, Math.round(L.h));
+  if (L.kind === 'image'){
+    if (!L.img) return;
+    g.imageSmoothingEnabled = true;
+    g.save();
+    if (L.parts && L.parts.length > 1){
+      const kx = cv.width / w, ky = cv.height / h;
+      const p0 = new Path2D();
+      for (let i = 0; i < L.parts.length; i++){
+        const q = L.parts[i];
+        p0.rect(q.x * kx, q.y * ky, q.w * kx, q.h * ky);
+      }
+      g.clip(p0);
+    }
+    if (L.hue) g.filter = 'hue-rotate(' + L.hue + 'deg)';
+    drawCover(g, L.img, 0, 0, cv.width, cv.height);
+    g.restore();
+    return;
+  }
+  const sl = sampleLine(L, x, y, w, h);
+  if (L.parts && L.parts.length > 1){
+    const kx = cv.width / w, ky = cv.height / h;
+    const path = new Path2D();
+    for (let i = 0; i < L.parts.length; i++){
+      const p = L.parts[i];
+      path.rect(p.x * kx, p.y * ky, p.w * kx, p.h * ky);
+    }
+    g.save(); g.clip(path);
+    const st0 = stripeFor(L, sl);
+    if (st0) g.drawImage(st0, 0, 0, sl.cw, sl.ch, 0, 0, cv.width, cv.height);
+    else g.drawImage(S.src.canvas, sl.sx, sl.sy, sl.sw, sl.sh, 0, 0, cv.width, cv.height);
+    g.restore();
+    return;
+  }
+  const stripe = stripeFor(L, sl);
+  if (stripe) g.drawImage(stripe, 0, 0, sl.cw, sl.ch, 0, 0, cv.width, cv.height);
+  else g.drawImage(S.src.canvas, sl.sx, sl.sy, sl.sw, sl.sh, 0, 0, cv.width, cv.height);
+}
+function makeThumb(L){
+  const c = document.createElement('canvas');
+  c.width = THUMB_W; c.height = THUMB_H;
+  paintThumb(c, L);
+  return c;
+}
+function makeGroupRow(g){
+  const members = S.layers.filter(function(L){ return L.gid === g.id; });
+  const allSel = members.length > 0 && members.every(function(L){ return isSel(L.id); });
+
+  const tog = h('span', {
+    class: 'gtog' + (g.collapsed ? '' : ' open'), title: '展开 / 收起',
+    on: { click: function(e){
+      e.stopPropagation();
+      g.collapsed = !g.collapsed;
+      renderLayerList();
+    } }
+  }, icon('i-chev', 'ic-s'));
+
+  const eye = h('span', {
+    class: 'eye ' + (g.visible ? 'on' : 'off'), title: '显示 / 隐藏整组',
+    on: { click: function(e){
+      e.stopPropagation();
+      pushUndo();
+      g.visible = !g.visible;
+      members.forEach(function(L){ L.visible = g.visible; });
+      renderAll();
+    } }
+  }, icon(g.visible ? 'i-eye' : 'i-eyeoff', 'ic-s'));
+
+  const row = h('div', { class: 'li grp-row' + (allSel ? ' sel' : '') },
+    tog,
+    h('span', { class: 'gico' }, icon('i-group', 'ic-s')),
+    h('span', { class: 'txt' },
+      h('span', { class: 'nm', text: g.name }),
+      h('span', { class: 'meta', text: '合集 · ' + members.length + ' 层' })),
+    eye);
+
+  row._G = g;
+  row.addEventListener('click', function(e){
+    if (e.ctrlKey || e.metaKey || e.shiftKey){
+      members.forEach(function(L){ if (!isSel(L.id)) S.selIds.push(L.id); });
+      if (members.length) S._sel = members[members.length-1].id;
+    } else {
+      setSel(members.map(function(L){ return L.id; }),
+             members.length ? members[members.length-1].id : null);
+    }
+    renderAll();
+  });
+  row.addEventListener('dblclick', function(e){
+    if (e.target.closest('.gtog, .eye')) return;
+    const n = prompt('合集名称', g.name);
+    if (n !== null && n.trim()){ pushUndo(); g.name = n.trim(); renderAll(); }
+  });
+  return row;
+}
+
+/* 成组：把选中的层在数组里挪到一起（顺序不变），共用同一个 gid */
+
+function renderLayerList(){
+  if (!S.src.canvas){
+    listEl.replaceChildren(h('div', { class: 'empty', text: '尚未载入图片。' }));
+    sigLayers = layerListSig();
+    return;
+  }
+
+  const rows = [makeSrcRow()];
+  const seenG = {};
+
+  for (let i = S.layers.length-1; i >= 0; i--){
+    const L = S.layers[i];
+    const g = L.gid ? S.groups[L.gid] : null;
+
+    /* 迭代方向是「顶 → 底」，所以第一次遇到某个合集的成员时，
+       就是它最上面那个成员，组头插在这里 */
+    if (g && !seenG[g.id]){
+      seenG[g.id] = 1;
+      rows.push(makeGroupRow(g));
+    }
+    if (g && g.collapsed) continue;          // 折叠时只留组头
+
+    rows.push(makeLayerRow(L, g));
+  }
+  listEl.replaceChildren.apply(listEl, rows);
+  sigLayers = layerListSig();
+}
+
+/* 源图层那一行：它没有 L 对象，单独一条 */
+function makeSrcRow(){
+  const thumb = h('span', { class: 'th' }, makeThumb(null));
+  const eye = h('span', {
+    class: 'eye ' + (S.showSrc ? 'on' : 'off'), title: '显示 / 隐藏原图',
+    on: { click: function(e){
+      e.stopPropagation();
+      S.showSrc = !S.showSrc;
+      const cb = $('srcVisible');
+      if (cb) cb.checked = S.showSrc;
+      render(); renderLayerList();
+    } }
+  }, icon(S.showSrc ? 'i-eye' : 'i-eyeoff', 'ic-s'));
+
+  const row = h('div', { class: 'li' },
+    thumb,
+    h('span', { class: 'txt' },
+      h('span', { class: 'nm src', text: '源图层' }),
+      h('span', { class: 'meta', text: '原图 · ' + (S.showSrc ? '可见' : '已隐藏') })),
+    eye);
+  row.addEventListener('click', function(){ setSel([]); renderAll(); });
+  return row;
+}
+
+function makeLayerRow(L, g){
+  let tag = (L.dir === 'v') ? '↕ 垂直' : '↔ 水平';
+  if (L.block > 1) tag += ' · 块 ' + L.block;
+  else if (L.order !== 'none') tag += (L.order === 'shuffle' ? ' · 乱序' : ' · 间序');
+  if (L.sampleOff) tag += ' · 偏移 ' + (L.sampleOff > 0 ? '+' : '') + L.sampleOff;
+  if (L.parts && L.parts.length) tag += ' · 合并 ' + L.parts.length + ' 块';
+
+  const eye = h('span', {
+    class: 'eye ' + (L.visible ? 'on' : 'off'), title: '显示 / 隐藏',
+    on: { click: function(e){
+      e.stopPropagation();
+      pushUndo(); L.visible = !L.visible; renderAll();
+    } }
+  }, icon(L.visible ? 'i-eye' : 'i-eyeoff', 'ic-s'));
+
+  const lk = h('span', {
+    class: 'lk' + (L.locked ? ' on' : ''), title: L.locked ? '已锁定，点击解锁' : '锁定位置',
+    on: { click: function(e){
+      e.stopPropagation();
+      pushUndo();
+      L.locked = !L.locked;
+      renderAll();
+      toast(L.locked ? '已锁定位置（画布上点不中它）' : '已解锁位置');
+    } }
+  }, icon('i-lock', 'ic-s'));
+
+  const row = h('div', {
+    class: 'li' + (isSel(L.id) ? ' sel' : '') + (g ? ' in-grp' : ''),
+    draggable: 'true'
+  },
+    h('span', { class: 'th' }, makeThumb(L)),
+    h('span', { class: 'txt' },
+      h('span', { class: 'nm', text: L.name }),
+      h('span', { class: 'meta', text: tag })),
+    lk, eye);
+
+  row._L = L;
+  /* 点击 = 单选；Ctrl / Shift + 点击 = 增减选 */
+  row.addEventListener('click', function(e){
+    if (e.ctrlKey || e.metaKey || e.shiftKey){
+      const list = selSet().slice();
+      const i = list.indexOf(L.id);
+      if (i < 0) list.push(L.id);
+      else if (list.length > 1) list.splice(i, 1);
+      setSel(list, L.id);
+    } else {
+      setSel([L.id], L.id);
+    }
+    renderAll();
+  });
+  row.addEventListener('dblclick', function(){
+    const n = prompt('图层名称', L.name);
+    if (n !== null && n.trim()){ pushUndo(); L.name = n.trim(); renderAll(); }
+  });
+  row.addEventListener('dragstart', function(e){
+    dragId = L.id; row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', String(L.id)); } catch(_){}
+  });
+  row.addEventListener('dragend', function(){ dragId = null; clearDropMarks(); renderLayerList(); });
+  row.addEventListener('dragover', function(e){
+    if (dragId === null || dragId === L.id) return;
+    e.preventDefault(); clearDropMarks();
+    const r = row.getBoundingClientRect();
+    row.classList.add((e.clientY - r.top) > r.height/2 ? 'dropafter' : 'dropbefore');
+  });
+  row.addEventListener('drop', function(e){
+    if (dragId === null || dragId === L.id) return;
+    e.preventDefault(); e.stopPropagation();
+    const r = row.getBoundingClientRect();
+    moveLayerRelative(dragId, L.id, (e.clientY - r.top) > r.height/2);
+    dragId = null; clearDropMarks();
+  });
+  return row;
+}
+
+function clearDropMarks(){
+  listEl.querySelectorAll('.dropbefore,.dropafter').forEach(function(el){
+    el.classList.remove('dropbefore','dropafter');
+  });
+}
+/* =========================================================
    属性面板
    ========================================================= */
 /* 滑杆行：min<0 视为双向滑杆，填充从 0 处向两侧展开。
@@ -2149,38 +2403,49 @@ function shiftLayer(dir){   // +1 上浮（数组后移），-1 下沉
    参数单元：标签在上、控件在下。
    多个单元放进 .cells 自动排成两列（Figma 外观面板的排法），
    短标签一行两个，省掉「标签靠左、数值靠右」中间那一大片空白。
+
+   返回的是节点本身，数字框挂在 cell._inp 上 ——
+   调用方拿到单元就能直接绑定，不用再按 id 去查。
    ========================================================= */
 function cellNum(inputId, label, val, opt){
   opt = opt || {};
-  const unit = opt.unit ? '<span class="sfx">' + opt.unit + '</span>' : '';
-  /* 图标就是拖拽热区：按住左右拖改数值（Figma 的做法，文字只作标签） */
-  const ico = opt.icon
-    ? '<svg class="cell-ico" data-scrub="'+inputId+'" data-def="'+val+'" aria-hidden="true">' +
-      '<use href="#'+opt.icon+'"/></svg>'
-    : '';
-  const attrs = (opt.min !== undefined ? ' min="' + opt.min + '"' : '') +
-                (opt.max !== undefined ? ' max="' + opt.max + '"' : '') +
-                ' step="' + (opt.step || 1) + '"' +
-                (opt.disabled ? ' disabled' : '');
-  return '<div class="cell">' +
-    '<label for="'+inputId+'">'+label+'</label>' +
-    '<div class="num">' + ico +
-      '<input type="number" id="'+inputId+'"'+attrs+' value="'+val+'">'+unit +
-    '</div></div>';
+  const input = h('input', {
+    type: 'number', id: inputId, value: val,
+    min: opt.min, max: opt.max, step: (opt.step || 1),
+    disabled: !!opt.disabled
+  });
+  const num = h('div', { class: 'num' });
+  if (opt.icon){
+    /* 图标就是拖拽热区：按住左右拖改数值（文字只作标签） */
+    const ico = hs('svg', {
+      class: 'cell-ico', 'data-scrub': inputId, 'data-def': String(val), 'aria-hidden': 'true'
+    }, hs('use', { href: '#' + opt.icon }));
+    ico._numEl = input;              // 拖拽时直接取到自己的数字框
+    num.appendChild(ico);
+  }
+  num.appendChild(input);
+  if (opt.unit) num.appendChild(h('span', { class: 'sfx', text: opt.unit }));
+
+  const cell = h('div', { class: 'cell' }, h('label', { for: inputId, text: label }), num);
+  cell._inp = input;
+  return cell;
 }
-/* 单个滑杆行的等价写法（保留给旧调用点） */
+/* 整行版本：一个单元独占一行 */
 function ctlNum(id, label, min, max, step, val, unit, icon){
-  return '<div class="cells">' +
-    cellNum(id + 'V', label, val, { unit:unit, min:min, max:max, step:step, icon:icon }) +
-    '</div>';
+  const cell = cellNum(id + 'V', label, val, { unit:unit, min:min, max:max, step:step, icon:icon });
+  const wrap = h('div', { class: 'cells' }, cell);
+  wrap._inp = cell._inp;
+  return wrap;
 }
 
 /* 给一个数字框接上写回路径。scrub 与键盘输入共用同一个 apply，不另开分支。
+   第一个参数可以是 id，也可以是节点本身（面板重建后调用方手里就有节点）。
    bounds 可选：返回 {min,max} 的函数，用于「宽的上限取决于 x」这类联动约束 ——
    传函数而不是读 DOM 属性，就不用为了刷新上限而重建整个面板（那会丢焦点）。 */
-function bindNum(inputId, after, bounds){
-  const el = document.getElementById(inputId);
+function bindNum(idOrEl, after, bounds){
+  const el = (typeof idOrEl === 'string') ? $(idOrEl) : idOrEl;
   if (!el) return null;
+  const inputId = el.id;
   const step = parseFloat(el.step) || 1;
   const b0 = { min: parseFloat(el.min), max: parseFloat(el.max) };
   const getB = function(){
@@ -2232,7 +2497,7 @@ function bindNum(inputId, after, bounds){
    文字标签只负责「这是什么」，不再兼拖拽热区 —— 两个都能拖会互相打架。 */
 function bindIcoScrub(icoEl){
   if (!icoEl || icoEl._scrub) return;
-  const el = document.getElementById(icoEl.getAttribute('data-scrub') || '');
+  const el = icoEl._numEl || $(icoEl.getAttribute('data-scrub') || '');
   if (!el || !el._apply) return;
   icoEl._scrub = true;
   const step = parseFloat(el.step) || 1;
@@ -2281,7 +2546,9 @@ function ensureBars(root){
     b.className = 'sbar';
     b.setAttribute('data-scrub', inp.id);
     b.setAttribute('data-def', inp.value);
-    b.innerHTML = '<i></i><b></b>';
+    b.appendChild(h('i'));
+    b.appendChild(h('b'));
+    b._numEl = inp;                  // 拖动时直接取到对应的数字框
     cells[i].appendChild(b);
   }
 }
@@ -2294,6 +2561,260 @@ function bindAllScrubs(root){
   const nums = root.querySelectorAll('input[type=number][id]');
   for (let i = 0; i < nums.length; i++) if (nums[i]._paint) nums[i]._paint();
 }
+
+/* =========================================================
+   属性面板：视图
+   ---------------------------------------------------------
+   纯构造，不查 DOM。控件先建出来、拿到手里，再拼进面板 ——
+   绑定直接用那个变量，不经过 id 字符串。
+   （旧写法是拼 190 行字符串再 getElementById 逐个找回，拼错一个字就是 null。）
+
+   面板每次结构性变化都会整体重建，所以控件实例只在本函数内有效。
+   ========================================================= */
+const BLEND_MODES = [
+  ['source-over', '正常（覆盖）'], ['multiply', '正片叠底'],
+  ['screen', '滤色'], ['overlay', '叠加'],
+  ['difference', '差值'], ['lighter', '变亮（相加）'],
+  ['darken', '变暗'], ['lighten', '提亮']
+];
+
+/* 下拉：先建 option 再赋 value（顺序和旧标记一致） */
+function mkSelect(id, opts, cur, onChange){
+  const sel = h('select', { id: id, on: onChange ? { change: onChange } : null });
+  opts.forEach(function(o){
+    sel.appendChild(h('option', { value: o[0], text: o[1] }));
+  });
+  sel.value = cur;
+  return sel;
+}
+
+function renderProps(){
+  closeAllDropdowns();
+  const L = getSel();
+
+  if (!L){
+    propsEl.classList.remove('img-layer');
+    propsEl.replaceChildren(
+      h('div', { class: 'empty' },
+        h('b', { text: '没有选中图层' }),
+        '在画布上拖拽即可框出拉伸层，',
+        h('br'),
+        '点已有矩形可以选中它并编辑参数。')
+    );
+    sigProps = 'none';
+    return;
+  }
+
+  const isShuf = L.order === 'shuffle', isInt = L.order === 'interleave';
+  const sl0 = sampleLine(L, Math.round(L.x), Math.round(L.y),
+                         Math.max(1, Math.round(L.w)), Math.max(1, Math.round(L.h)));
+  const dirTag = (L.dir === 'v') ? '↕ 垂直' : '↔ 水平';
+  const offTag = L.sampleOff ? ' · ' + (L.sampleOff > 0 ? '+' : '') + L.sampleOff + '%' : '';
+  const colTag = (L.sat === 0 && L.warm === 0 && !L.hue) ? '默认'
+               : (L.hue ? 'H' + (L.hue > 0 ? '+' : '') + L.hue + '° ' : '') +
+                 'S' + (L.sat > 0 ? '+' : '') + L.sat + ' W' + (L.warm > 0 ? '+' : '') + L.warm;
+  const isImg = (L.kind === 'image');
+  const orderTag = isShuf ? '乱序' : isInt ? '间序' : '顺序';
+
+  propsEl.classList.toggle('img-layer', isImg);
+
+  /* ---------- 先建控件 ---------- */
+  const pName  = h('input', { type: 'text', id: 'pName', value: L.name });
+  const pX     = cellNum('pX', 'X', Math.round(L.x), { unit:'px', min:0, max:Math.round(S.src.w - L.w), disabled:L.locked, icon:'i-ax-x' });
+  const pY     = cellNum('pY', 'Y', Math.round(L.y), { unit:'px', min:0, max:Math.round(S.src.h - L.h), disabled:L.locked, icon:'i-ax-y' });
+  const pW     = cellNum('pW', '宽', Math.round(L.w), { unit:'px', min:2, max:Math.round(S.src.w - L.x), disabled:L.locked, icon:'i-ax-w' });
+  const pH     = cellNum('pH', '高', Math.round(L.h), { unit:'px', min:2, max:Math.round(S.src.h - L.y), disabled:L.locked, icon:'i-ax-h' });
+  const sxGeo  = h('span', { class: 'sx', id: 'sxGeo', text: Math.round(L.w) + ' × ' + Math.round(L.h) });
+
+  const pLock  = h('button', { id: 'pLock', class: L.locked ? 'lock-on' : '' },
+                   icon('i-lock', 'ic-s'), L.locked ? '解锁位置' : '锁定位置');
+  const pDup   = h('button', { id: 'pDup', text: '复制' });
+  const pDel   = h('button', { id: 'pDel', text: '删除' });
+
+  const pDir   = mkSelect('pDir', [
+    ['h', '水平 · 取竖列左右拉伸'],
+    ['v', '垂直 · 取横行上下拉伸']
+  ], L.dir);
+
+  const pOff   = ctlNum('pOff', '取样偏移', -100, 100, 1, L.sampleOff, '%', 'i-offset');
+  const pBlock = ctlNum('pBlock', '分组像素', 1, 100, 1, L.block, 'px', 'i-grid2');
+
+  const pOrder = mkSelect('pOrder', [
+    ['none', '顺序（默认）'],
+    ['shuffle', '乱序（打乱取样线上的像素）'],
+    ['interleave', '间序（分段交错）']
+  ], L.order);
+
+  const pShufAmt  = cellNum('pShufAmtV', '强度', L.shufAmt, { unit:'%', min:0, max:100, icon:'i-bolt' });
+  const pShufBlkV = cellNum('pShufBlkV', '块大小', L.shufBlock, { unit:'px', min:1, max:16, icon:'i-block2' });
+  const pSeed     = h('input', { type: 'number', id: 'pSeed', value: L.seed });
+  const pReseed   = h('button', { id: 'pReseed' }, icon('i-dice', 'ic'), '重掷种子');
+  const grpShuf   = h('div', { id: 'grpShuf', style: isShuf ? null : 'display:none' },
+    cells(pShufAmt, pShufBlkV),
+    h('div', { class: 'stack' }, h('label', { text: '种子' }), h('div', { class: 'num' }, pSeed)),
+    h('div', { class: 'btnrow' }, pReseed),
+    info('块大小 = 以几个像素为单位整体搬家；', h('br'), '强度 = 每一步发生交换的概率。'));
+
+  const pSeg   = ctlNum('pSeg', '段数', 2, 16, 1, L.interSeg, '段', 'i-seg2');
+  const grpInt = h('div', { id: 'grpInt', style: isInt ? null : 'display:none' },
+    pSeg,
+    info('把取样线切成 N 段再交错缝回，产生规律的条带错位。'));
+
+  const pSat  = cellNum('pSatV', '饱和度', L.sat, { min:-100, max:100, icon:'i-drop' });
+  const pWarm = cellNum('pWarmV', '冷暖度', L.warm, { min:-100, max:100, icon:'i-temp' });
+  const pHue  = cellNum('pHueV', '色相', L.hue, { min:-180, max:180, unit:'°', icon:'i-hue' });
+  const pRand = h('button', { id: 'pRand' }, icon('i-dice', 'ic'), '本层随机');
+
+  const pOp    = ctlNum('pOp', '不透明度', 0, 100, 1, Math.round(L.opacity * 100), '%', 'i-alpha');
+  const pBlend = mkSelect('pBlend', BLEND_MODES, L.blend);
+
+  /* ---------- 再拼成面板 ---------- */
+  const nodes = [];
+
+  if (isImg){
+    nodes.push(h('div', { class: 'img-note',
+      text: '图片图层：按位图本身显示，下面的拉伸参数对它不生效。' }));
+  }
+
+  nodes.push(
+    h('details', { class: 'grp', 'data-grp': 'geo', open: !!grpOpen.geo },
+      h('summary', null, icon('i-chev', 'chev'), '几何', sxGeo),
+      h('div', { class: 'grp-body' },
+        h('div', { class: 'stack' }, h('label', { text: '名称' }), pName),
+        cells(pX, pY),
+        cells(pW, pH),
+        h('div', { class: 'btnrow', style: 'margin-top:10px' }, pLock, pDup, pDel),
+        L.locked
+          ? h('div', { class: 'mini', style: 'margin:8px 0 0',
+              text: '位置已锁定：拖动 / 缩放失效，参数仍可修改。' })
+          : null)),
+
+    h('details', { class: 'grp', 'data-grp': 'stretch', open: !!grpOpen.stretch },
+      h('summary', null, icon('i-chev', 'chev'), '拉伸与取样',
+        h('span', { class: 'sx', text: dirTag + offTag })),
+      h('div', { class: 'grp-body' },
+        stack('方向', 'pDir', pDir),
+        pOff,
+        info('−100 左 / 上边缘　0 居中　+100 右 / 下边缘',
+          h('br'),
+          '当前取样线 ',
+          h('strong', { text: (sl0.dir === 'v' ? 'y = ' : 'x = ') + sl0.pos + ' px' }),
+          '，就是画布上那条黄线。'))),
+
+    h('details', { class: 'grp', 'data-grp': 'block', open: !!grpOpen.block },
+      h('summary', null, icon('i-chev', 'chev'), '方块感',
+        h('span', { class: 'sx', text: L.block > 1 ? L.block + ' px' : '关闭' })),
+      h('div', { class: 'grp-body' },
+        pBlock,
+        info('每 N 个像素一组，整组只取首像素的颜色。',
+          h('br'), '1 = 原样，2–5 = 细条纹，',
+          h('strong', { text: '10 以上 = 粗色块' }), '。'))),
+
+    h('details', { class: 'grp', 'data-grp': 'order', open: !!grpOpen.order },
+      h('summary', null, icon('i-chev', 'chev'), '像素顺序',
+        h('span', { class: 'sx', text: orderTag })),
+      h('div', { class: 'grp-body' },
+        stack('模式', 'pOrder', pOrder),
+        grpShuf,
+        grpInt)),
+
+    h('details', { class: 'grp', 'data-grp': 'color', open: !!grpOpen.color },
+      h('summary', null, icon('i-chev', 'chev'), '色彩',
+        h('span', { class: 'sx', text: colTag })),
+      h('div', { class: 'grp-body' },
+        cells(pSat, pWarm, pHue),
+        h('div', { class: 'btnrow' }, pRand),
+        info('随机幅度由右侧「全局随机 · 强度」决定。'))),
+
+    h('details', { class: 'grp', 'data-grp': 'blend', open: !!grpOpen.blend },
+      h('summary', null, icon('i-chev', 'chev'), '混合',
+        h('span', { class: 'sx', text: Math.round(L.opacity * 100) + '%' })),
+      h('div', { class: 'grp-body' },
+        pOp,
+        stack('模式', 'pBlend', pBlend)))
+  );
+
+  propsEl.replaceChildren.apply(propsEl, nodes);
+
+  /* ---------- 绑定：直接用上面那些变量 ---------- */
+
+  fillAllRanges(propsEl);
+
+  pName.addEventListener('change', function(e){
+    pushUndo(); L.name = e.target.value || L.name; renderAll();
+  });
+
+  /* 几何四个参数同样走 bindNum：键盘输入 + 拖图标都通。
+     上下限用函数给，X 一变「宽」的上限立刻跟着变，不需要重建面板。 */
+  const syncGeoTxt = function(){
+    sxGeo.textContent = Math.round(L.w) + ' × ' + Math.round(L.h);
+  };
+  bindNum(pX._inp, function(v){ L.x = v; syncGeoTxt(); }, function(){ return { min:0, max:S.src.w - L.w }; });
+  bindNum(pY._inp, function(v){ L.y = v; syncGeoTxt(); }, function(){ return { min:0, max:S.src.h - L.h }; });
+  bindNum(pW._inp, function(v){ L.w = v; syncGeoTxt(); }, function(){ return { min:2, max:S.src.w - L.x }; });
+  bindNum(pH._inp, function(v){ L.h = v; syncGeoTxt(); }, function(){ return { min:2, max:S.src.h - L.y }; });
+
+  bindNum(pBlock._inp, function(v){ L.block = Math.round(v); });
+
+  pDir.addEventListener('change', function(e){
+    pushUndo(); 
+    L.dir = (e.target.value === 'v') ? 'v' : 'h';
+    newLayerDir = L.dir;                       // 顺手变成新框的默认方向
+    $('newDir').value = L.dir;
+    renderAll();
+  });
+  bindNum(pOff._inp, function(v){ L.sampleOff = Math.round(v); });
+
+  pLock.addEventListener('click', function(){
+    pushUndo(); L.locked = !L.locked; renderAll();
+    toast(L.locked ? '已锁定位置（不能拖动/缩放）' : '已解锁位置');
+  });
+
+  pOrder.addEventListener('change', function(e){
+    pushUndo(); L.order = e.target.value;
+    grpShuf.style.display = (L.order === 'shuffle') ? '' : 'none';
+    grpInt.style.display  = (L.order === 'interleave') ? '' : 'none';
+    renderAll();
+  });
+
+  bindNum(pShufAmt._inp,  function(v){ L.shufAmt = Math.round(v); });
+  bindNum(pShufBlkV._inp, function(v){ L.shufBlock = Math.round(v); });
+
+  pSeed.addEventListener('change', function(e){
+    pushUndo(); L.seed = (parseInt(e.target.value) || 0) >>> 0;
+    pRender();
+  });
+  pReseed.addEventListener('click', function(){
+    pushUndo(); L.seed = randSeed(); renderProps(); render();
+  });
+
+  bindNum(pSeg._inp, function(v){ L.interSeg = Math.round(v); });
+
+  bindNum(pSat._inp,  function(v){ L.sat  = Math.round(v); });
+  bindNum(pWarm._inp, function(v){ L.warm = Math.round(v); });
+  bindNum(pHue._inp,  function(v){ L.hue = Math.round(v); });
+
+  pRand.addEventListener('click', function(){
+    pushUndo(); randomizeLayer(L); renderProps(); render();
+  });
+
+  bindNum(pOp._inp, function(v){ L.opacity = v / 100; });
+
+  pBlend.addEventListener('change', function(e){
+    pushUndo(); L.blend = e.target.value; render();
+  });
+
+  pDup.addEventListener('click', duplicateSel);
+  pDel.addEventListener('click', deleteSel);
+
+  /* 所有数值框都绑好之后，再挂图标拖拽（bindIcoScrub 依赖 el._apply） */
+  bindAllScrubs(propsEl);
+  enhanceSelects(propsEl);
+
+  /* 记下这次渲染用的签名：下次 renderAll 据此判断要不要重建 */
+  sigProps = propsSig(L);
+}
+function pRender(){ render(); renderStatus(); }
 
 /* =========================================================
    自绘下拉
@@ -2350,7 +2871,8 @@ function enhanceSelect(sel){
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'dd-btn';
-  btn.innerHTML = '<span></span><svg class="dd-chev"><use href="#i-chev"/></svg>';
+  btn.appendChild(h('span'));
+  btn.appendChild(icon('i-chev', 'dd-chev'));
   const list = document.createElement('div');
   list.className = 'dd-list';
   wrap.insertBefore(btn, sel);
@@ -2435,193 +2957,7 @@ window.addEventListener('resize', closeAllDropdowns);
 /* 分组展开状态：renderProps 会整体重建 DOM，靠这个对象把展开状态带过去 */
 const GRP_DEFAULT = { geo:true, stretch:true, block:true, order:false, color:true, blend:false };
 const grpOpen = Object.assign({}, GRP_DEFAULT);
-function grpAttr(k){ return grpOpen[k] ? ' open' : ''; }
 
-function renderProps(){
-  closeAllDropdowns();
-  const L = getSel();
-  if (!L){
-    propsEl.innerHTML =
-      '<div class="empty"><b>没有选中图层</b>' +
-      '在画布上拖拽即可框出拉伸层，<br>点已有矩形可以选中它并编辑参数。</div>';
-    return;
-  }
-  const isShuf = L.order === 'shuffle', isInt = L.order === 'interleave';
-  const sl0 = sampleLine(L, Math.round(L.x), Math.round(L.y),
-                         Math.max(1, Math.round(L.w)), Math.max(1, Math.round(L.h)));
-  const dirTag = (L.dir === 'v') ? '↕ 垂直' : '↔ 水平';
-  const offTag = L.sampleOff ? ' · ' + (L.sampleOff > 0 ? '+' : '') + L.sampleOff + '%' : '';
-  const colTag = (L.sat === 0 && L.warm === 0) ? '默认'
-               : 'S' + (L.sat > 0 ? '+' : '') + L.sat + ' W' + (L.warm > 0 ? '+' : '') + L.warm;
-  const orderTag = isShuf ? '乱序' : isInt ? '间序' : '顺序';
-
-  propsEl.innerHTML =
-  '<details class="grp" data-grp="geo"' + grpAttr('geo') + '>' +
-    '<summary><svg class="chev"><use href="#i-chev"/></svg>几何' +
-      '<span class="sx" id="sxGeo">' + Math.round(L.w) + ' × ' + Math.round(L.h) + '</span></summary>' +
-    '<div class="grp-body">' +
-      '<div class="stack"><label>名称</label>' +
-        '<input type="text" id="pName" value="'+escapeHtml(L.name)+'"></div>' +
-      '<div class="cells">' +
-        cellNum('pX','X', Math.round(L.x), { unit:'px', min:0, max:Math.round(S.src.w-L.w), disabled:L.locked, icon:'i-ax-x' }) +
-        cellNum('pY','Y', Math.round(L.y), { unit:'px', min:0, max:Math.round(S.src.h-L.h), disabled:L.locked, icon:'i-ax-y' }) +
-      '</div>' +
-      '<div class="cells">' +
-        cellNum('pW','宽', Math.round(L.w), { unit:'px', min:2, max:Math.round(S.src.w-L.x), disabled:L.locked, icon:'i-ax-w' }) +
-        cellNum('pH','高', Math.round(L.h), { unit:'px', min:2, max:Math.round(S.src.h-L.y), disabled:L.locked, icon:'i-ax-h' }) +
-      '</div>' +
-      '<div class="btnrow" style="margin-top:10px">' +
-        '<button id="pLock" class="'+(L.locked ? 'lock-on' : '')+'">' +
-          '<svg class="ic-s"><use href="#i-lock"/></svg>' + (L.locked ? '解锁位置' : '锁定位置') + '</button>' +
-        '<button id="pDup">复制</button><button id="pDel">删除</button>' +
-      '</div>' +
-      (L.locked ? '<div class="mini" style="margin:8px 0 0">位置已锁定：拖动 / 缩放失效，参数仍可修改。</div>' : '') +
-    '</div>' +
-  '</details>' +
-
-  '<details class="grp" data-grp="stretch"' + grpAttr('stretch') + '>' +
-    '<summary><svg class="chev"><use href="#i-chev"/></svg>拉伸与取样' +
-      '<span class="sx">' + dirTag + offTag + '</span></summary>' +
-    '<div class="grp-body">' +
-      '<div class="stack"><label for="pDir">方向</label><select id="pDir">' +
-        '<option value="h"'+(L.dir !== 'v' ? ' selected' : '')+'>水平 · 取竖列左右拉伸</option>' +
-        '<option value="v"'+(L.dir === 'v' ? ' selected' : '')+'>垂直 · 取横行上下拉伸</option>' +
-      '</select></div>' +
-      ctlNum('pOff','取样偏移', -100, 100, 1, L.sampleOff, '%', 'i-offset') +
-      '<div class="info">−100 左 / 上边缘　0 居中　+100 右 / 下边缘<br>' +
-        '当前取样线 <strong>' + (sl0.dir === 'v' ? 'y = ' + sl0.pos : 'x = ' + sl0.pos) +
-        ' px</strong>，就是画布上那条黄线。</div>' +
-    '</div>' +
-  '</details>' +
-
-  '<details class="grp" data-grp="block"' + grpAttr('block') + '>' +
-    '<summary><svg class="chev"><use href="#i-chev"/></svg>方块感' +
-      '<span class="sx">' + (L.block > 1 ? L.block + ' px' : '关闭') + '</span></summary>' +
-    '<div class="grp-body">' +
-      ctlNum('pBlock','分组像素', 1, 100, 1, L.block, 'px', 'i-grid2') +
-      '<div class="info">每 N 个像素一组，整组只取首像素的颜色。<br>1 = 原样，2–5 = 细条纹，<strong>10 以上 = 粗色块</strong>。</div>' +
-    '</div>' +
-  '</details>' +
-
-  '<details class="grp" data-grp="order"' + grpAttr('order') + '>' +
-    '<summary><svg class="chev"><use href="#i-chev"/></svg>像素顺序' +
-      '<span class="sx">' + orderTag + '</span></summary>' +
-    '<div class="grp-body">' +
-      '<div class="stack"><label for="pOrder">模式</label><select id="pOrder">' +
-        '<option value="none"'+(L.order==='none'?' selected':'')+'>顺序（默认）</option>' +
-        '<option value="shuffle"'+(isShuf?' selected':'')+'>乱序（打乱取样线上的像素）</option>' +
-        '<option value="interleave"'+(isInt?' selected':'')+'>间序（分段交错）</option>' +
-      '</select></div>' +
-      '<div id="grpShuf" style="'+(isShuf?'':'display:none')+'">' +
-        '<div class="cells">' +
-          cellNum('pShufAmtV','强度', L.shufAmt, { unit:'%', min:0, max:100, icon:'i-bolt' }) +
-          cellNum('pShufBlkV','块大小', L.shufBlock, { unit:'px', min:1, max:16, icon:'i-block2' }) +
-        '</div>' +
-        '<div class="stack"><label>种子</label>' +
-          '<div class="num"><input type="number" id="pSeed" value="'+L.seed+'"></div>' +
-        '</div>' +
-        '<div class="btnrow"><button id="pReseed"><svg class="ic"><use href="#i-dice"/></svg>重掷种子</button></div>' +
-        '<div class="info">块大小 = 以几个像素为单位整体搬家；<br>强度 = 每一步发生交换的概率。</div>' +
-      '</div>' +
-      '<div id="grpInt" style="'+(isInt?'':'display:none')+'">' +
-        ctlNum('pSeg','段数', 2, 16, 1, L.interSeg, '段', 'i-seg2') +
-        '<div class="info">把取样线切成 N 段再交错缝回，产生规律的条带错位。</div>' +
-      '</div>' +
-    '</div>' +
-  '</details>' +
-
-  '<details class="grp" data-grp="color"' + grpAttr('color') + '>' +
-    '<summary><svg class="chev"><use href="#i-chev"/></svg>色彩' +
-      '<span class="sx">' + colTag + '</span></summary>' +
-    '<div class="grp-body">' +
-      '<div class="cells">' +
-        cellNum('pSatV','饱和度', L.sat, { min:-100, max:100, icon:'i-drop' }) +
-        cellNum('pWarmV','冷暖度', L.warm, { min:-100, max:100, icon:'i-temp' }) +
-      '</div>' +
-      '<div class="btnrow"><button id="pRand"><svg class="ic"><use href="#i-dice"/></svg>本层随机</button></div>' +
-      '<div class="info">随机幅度由右侧「全局随机 · 强度」决定。</div>' +
-    '</div>' +
-  '</details>' +
-
-  '<details class="grp" data-grp="blend"' + grpAttr('blend') + '>' +
-    '<summary><svg class="chev"><use href="#i-chev"/></svg>混合' +
-      '<span class="sx">' + Math.round(L.opacity*100) + '%</span></summary>' +
-    '<div class="grp-body">' +
-      ctlNum('pOp','不透明度', 0, 100, 1, Math.round(L.opacity*100), '%', 'i-alpha') +
-      '<div class="stack"><label for="pBlend">模式</label><select id="pBlend">' +
-        ['source-over:正常（覆盖）','multiply:正片叠底','screen:滤色','overlay:叠加',
-         'difference:差值','lighter:变亮（相加）','darken:变暗','lighten:提亮']
-        .map(function(o){ const p=o.split(':'); return '<option value="'+p[0]+'"'+(L.blend===p[0]?' selected':'')+'>'+p[1]+'</option>'; }).join('') +
-      '</select></div>' +
-    '</div>' +
-  '</details>';
-
-  fillAllRanges(propsEl);
-
-  const bind = function(id, ev, fn){ const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
-  /* 数值行：键盘输入与标签拖拽共用 bindNum 的写回路径 */
-  const num = function(id, after){ bindNum(id + 'V', after); };
-  const dirty = function(){ L._col = null; };   // 参数变了就作废该层像素列缓存
-
-  bind('pName','change', function(e){ pushUndo(); L.name = e.target.value || L.name; renderAll(); });
-  /* 几何四个参数同样走 bindNum：键盘输入 + 拖标签都通。
-     上下限用函数给，X 一变「宽」的上限立刻跟着变，不需要重建面板。 */
-  const sxGeo = function(){
-    const el = document.getElementById('sxGeo');
-    if (el) el.textContent = Math.round(L.w) + ' × ' + Math.round(L.h);
-  };
-  bindNum('pX', function(v){ L.x = v; sxGeo(); }, function(){ return { min:0, max:S.src.w - L.w }; });
-  bindNum('pY', function(v){ L.y = v; sxGeo(); }, function(){ return { min:0, max:S.src.h - L.h }; });
-  bindNum('pW', function(v){ L.w = v; sxGeo(); }, function(){ return { min:2, max:S.src.w - L.x }; });
-  bindNum('pH', function(v){ L.h = v; sxGeo(); }, function(){ return { min:2, max:S.src.h - L.y }; });
-
-  num('pBlock', function(v){ dirty(); L.block = Math.round(v); });
-
-  bind('pDir','change', function(e){
-    pushUndo(); dirty();
-    L.dir = (e.target.value === 'v') ? 'v' : 'h';
-    newLayerDir = L.dir;                       // 顺手变成新框的默认方向
-    document.getElementById('newDir').value = L.dir;
-    renderAll();
-  });
-  num('pOff', function(v){ dirty(); L.sampleOff = Math.round(v); });
-  bind('pLock','click', function(){
-    pushUndo(); L.locked = !L.locked; renderAll();
-    toast(L.locked ? '已锁定位置（不能拖动/缩放）' : '已解锁位置');
-  });
-
-  bind('pOrder','change', function(e){
-    pushUndo(); dirty(); L.order = e.target.value;
-    document.getElementById('grpShuf').style.display = (L.order === 'shuffle') ? '' : 'none';
-    document.getElementById('grpInt').style.display  = (L.order === 'interleave') ? '' : 'none';
-    renderAll();
-  });
-  num('pShufAmt', function(v){ dirty(); L.shufAmt = Math.round(v); });
-  num('pShufBlk', function(v){ dirty(); L.shufBlock = Math.round(v); });
-  bind('pSeed','change', function(e){ pushUndo(); dirty(); L.seed = (parseInt(e.target.value)||0)>>>0; pRender(); });
-  bind('pReseed','click', function(){ pushUndo(); dirty(); L.seed = randSeed(); renderProps(); render(); });
-  num('pSeg', function(v){ dirty(); L.interSeg = Math.round(v); });
-
-  num('pSat',  function(v){ dirty(); L.sat  = Math.round(v); });
-  num('pWarm', function(v){ dirty(); L.warm = Math.round(v); });
-  bind('pRand','click', function(){ pushUndo(); randomizeLayer(L); renderProps(); render(); });
-
-  num('pOp', function(v){ L.opacity = v/100; });
-  bind('pBlend','change', function(e){ pushUndo(); L.blend = e.target.value; render(); });
-  bind('pDup','click', duplicateSel);
-  bind('pDel','click', deleteSel);
-  /* 所有数值框都绑好之后，再挂图标拖拽（bindIcoScrub 依赖 el._apply） */
-  bindAllScrubs(propsEl);
-  enhanceSelects(propsEl);
-}
-function pRender(){ render(); renderStatus(); }
-
-/* Ctrl+\ ：隐藏 / 恢复两侧面板，用来看画面本身 */
-function toggleUI(){
-  const on = document.body.classList.toggle('hide-ui');
-  renderAll();
-  toast(on ? '面板已隐藏 · Ctrl+\\ 恢复' : '面板已恢复');
-}
 
 /* =========================================================
    随机
@@ -2662,11 +2998,11 @@ function renderStatus(){
   if (nSel > 1) t += '  ·  选中 ' + nSel + ' 层';
   else if (L) t += '  ·  选中 ' + Math.round(L.w) + '×' + Math.round(L.h) + ' @' + Math.round(L.x) + ',' + Math.round(L.y);
   statusEl.textContent = t;
-  document.getElementById('zVal').textContent = Math.round(S.view.s*100) + '%';
+  $('zVal').textContent = Math.round(S.view.s*100) + '%';
 }
 
 /* =========================================================
-   交互
+   画布手势：指针
    ========================================================= */
 let mode = null, draft = null, drag = {}, spaceDown = false, draftDir = 'h';
 
@@ -2693,10 +3029,13 @@ function normRect(x0,y0,x1,y1){
 
 vp.addEventListener('pointerdown', function(e){
   if (e.button === 1 || e.button === 2) e.preventDefault();
-  /* 只有点在画布本身上才算画布手势。
-     否则缩放条 / 小地图这些浮层按钮按下去会冒泡到这里，
-     开启 drag 并 setPointerCapture —— 指针被抢走，按钮收不到 pointerup，click 永远不触发。 */
-  if (e.target !== cvs && e.target !== vp) return;
+  /* 只要按在视口范围内就算画布手势。
+     以前这里写的是 e.target === cvs，结果 #hint 那层覆盖物（.box）把点击全吃了：
+     坐标换算和命中测试都是对的，但事件根本没进到画布逻辑里 —— 表现就是
+     「点了选不中、选中也拖不动」，而且只在提示层还盖着的时候复现。
+     控件（缩放条 / 小地图 / 按钮）单独排除，避免又回到「按钮收不到 pointerup」。 */
+  if (!vp.contains(e.target)) return;
+  if (e.target.closest && e.target.closest('button, input, select, textarea, #zoombar, #nav')) return;
   if (!S.src.canvas) return;
 
   const p  = localPos(e);
@@ -2739,6 +3078,15 @@ vp.addEventListener('pointerdown', function(e){
     capture(e);
     renderAll();
     return;
+  }
+  /* 这一下没命中任何可选中层 —— 如果位置上盖着锁定层，说明白原因 */
+  for (let i = S.layers.length - 1; i >= 0; i--){
+    const Lk = S.layers[i];
+    if (Lk.locked && Lk.visible !== false &&
+        im.x >= Lk.x && im.x <= Lk.x + Lk.w && im.y >= Lk.y && im.y <= Lk.y + Lk.h){
+      toast('「' + Lk.name + '」已锁定位置，解锁后才能选中');
+      break;
+    }
   }
   setSel([]);
   mode = 'draw';
@@ -2882,7 +3230,18 @@ function endDrag(e){
 }
 vp.addEventListener('pointerup', endDrag);
 vp.addEventListener('pointercancel', endDrag);
+/* 在画布外（甚至窗口外）松手时，vp 收不到 pointerup，mode 会卡在 move/resize —— 
+   下一次点击就会变成「继续拖动上一次的层」，表现就是点不中新层、也拖不动。
+   补到 window 上兜底。 */
+window.addEventListener('pointerup', function(e){ if (mode) endDrag(e); });
+window.addEventListener('pointercancel', function(e){ if (mode) endDrag(e); });
+window.addEventListener('blur', function(){ if (mode) endDrag({}); });
 vp.addEventListener('pointerleave', function(){ if (!mode && S.hover !== null){ S.hover = null; render(); } });
+/* 键盘 / 滚轮 / 粘贴 / 拖放载入在 14b-画布输入.js */
+
+/* =========================================================
+   画布输入：滚轮 / 拖放载入 / 粘贴 / 键盘
+   ========================================================= */
 
 /* 拖拽载入 */
 ['dragenter','dragover'].forEach(function(ev){
@@ -2979,8 +3338,8 @@ window.addEventListener('keydown', function(e){
     if (e.shiftKey) exportProjectFile(); else saveToLibrary();
     return;
   }
-  if (mod && k === 'o'){ e.preventDefault(); document.getElementById('projPick').click(); return; }
-  if (mod && e.key === ','){ e.preventDefault(); document.getElementById('btnSettings').click(); return; }
+  if (mod && k === 'o'){ e.preventDefault(); $('projPick').click(); return; }
+  if (mod && e.key === ','){ e.preventDefault(); $('btnSettings').click(); return; }
   if (mod && e.key === '0'){ e.preventDefault(); fitView(); renderAll(); return; }
   if (mod && e.key === '1'){
     e.preventDefault();
@@ -2990,7 +3349,7 @@ window.addEventListener('keydown', function(e){
   /* Ctrl+\ 隐藏两侧面板，只看图；再按恢复 */
   if (mod && (e.code === 'Backslash' || e.key === '\\')){ e.preventDefault(); toggleUI(); return; }
   /* Ctrl+Shift+K 导入图片（Figma 的 place image） */
-  if (mod && e.shiftKey && k === 'k'){ e.preventDefault(); document.getElementById('filePick').click(); return; }
+  if (mod && e.shiftKey && k === 'k'){ e.preventDefault(); $('filePick').click(); return; }
   /* Shift+0 = 100%，Shift+1 = 适应窗口（Figma 习惯） */
   if (e.shiftKey && !mod && e.code === 'Digit0'){
     e.preventDefault(); zoomAt(vp.clientWidth/2, vp.clientHeight/2, 1/S.view.s); renderAll(); return;
@@ -2999,7 +3358,7 @@ window.addEventListener('keydown', function(e){
     e.preventDefault(); fitView(); renderAll(); return;
   }
   /* ? 打开快捷键面板 */
-  if (e.key === '?'){ e.preventDefault(); document.getElementById('modalHelp').classList.add('show'); return; }
+  if (e.key === '?'){ e.preventDefault(); $('modalHelp').classList.add('show'); return; }
 
   if (e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); deleteSel(); return; }
   if (e.key === '['){ shiftLayer(-1); return; }
@@ -3096,8 +3455,55 @@ function duplicateSel(){
   renderAll();
 }
 /* ---- 图层剪贴板（Ctrl+C / Ctrl+X / Ctrl+V） ---- */
+/* 图片层的位图不进 JSON（否则每次撤销快照都要带一份 base64）。
+   用 id -> canvas 的注册表在撤销/复制后重新挂回去。 */
+const IMG_REG = new Map();
+function attachImg(L, cv, name){
+  IMG_REG.set(L.id, cv);
+  Object.defineProperty(L, 'img', { value: cv, writable: true, enumerable: false, configurable: true });
+  L.kind = 'image';
+  if (name) L.imgName = name;
+  return L;
+}
+/* 把一张位图加成图层：按原尺寸放，超出画布就等比缩到 90% 以内，居中 */
+function createImageLayer(cv, name){
+  if (!S.src.canvas){ toast('先导入主图'); return null; }
+  pushUndo();
+  const k = Math.min(1, S.src.w * 0.9 / cv.width, S.src.h * 0.9 / cv.height);
+  const w = Math.max(2, Math.round(cv.width * k));
+  const hh = Math.max(2, Math.round(cv.height * k));
+  const L = makeLayer({ x: Math.round((S.src.w - w) / 2), y: Math.round((S.src.h - hh) / 2), w: w, h: hh });
+  L.name = (name || '图片').replace(/.[^.]+$/, '').slice(0, 28);
+  attachImg(L, cv, name);
+  S.layers.push(L);
+  setSel([L.id], L.id);
+  renderAll();
+  return L;
+}
+/* 读一个图片文件成 canvas */
+function fileToCanvas(file, cb){
+  const fr = new FileReader();
+  fr.onload = function(){
+    const im = new Image();
+    im.onload = function(){
+      const c = document.createElement('canvas');
+      c.width = im.naturalWidth; c.height = im.naturalHeight;
+      c.getContext('2d').drawImage(im, 0, 0);
+      cb(c, file.name);
+    };
+    im.onerror = function(){ toast('这张图片读不出来'); };
+    im.src = fr.result;
+  };
+  fr.onerror = function(){ toast('文件读取失败'); };
+  fr.readAsDataURL(file);
+}
 function cloneLayer(L){
-  return JSON.parse(JSON.stringify(L, function(k,v){ return k === '_col' ? undefined : v; }));
+  const o = JSON.parse(JSON.stringify(L, function(k,v){ return k === '_col' ? undefined : v; }));
+  if (L.kind === 'image' && L.img){
+    o.id = uid();
+    attachImg(o, L.img, L.imgName);
+  }
+  return o;
 }
 function copyLayer(){
   const L = getSel();
@@ -3180,10 +3586,10 @@ function cutsToSegs(cuts, total, overlap){
   return segs;
 }
 function makeGrid(){
-  const cols = clamp(parseInt(document.getElementById('gridC').value) || 1, 1, 60);
-  const rows = clamp(parseInt(document.getElementById('gridR').value) || 1, 1, 60);
-  const jit  = clamp(parseFloat(document.getElementById('gridJit').value) || 0, 0, 100) / 100;
-  const ov   = clamp(parseFloat(document.getElementById('gridOv').value) || 0, 0, 60) / 100;
+  const cols = clamp(parseInt($('gridC').value) || 1, 1, 60);
+  const rows = clamp(parseInt($('gridR').value) || 1, 1, 60);
+  const jit  = clamp(parseFloat($('gridJit').value) || 0, 0, 100) / 100;
+  const ov   = clamp(parseFloat($('gridOv').value) || 0, 0, 60) / 100;
   if (!S.src.canvas) return;
   if (cols * rows > 900){ toast('最多 900 个格子'); return; }
 
@@ -3213,7 +3619,7 @@ function makeGrid(){
    输出：追加到图层栈顶
    ========================================================= */
 function boxSizeRange(){
-  const p = function(id, dft){ const v = parseFloat(document.getElementById(id).value); return isFinite(v) ? v : dft; };
+  const p = function(id, dft){ const v = parseFloat($(id).value); return isFinite(v) ? v : dft; };
   let wMin = clamp(p('rbWMin', 8), 1, 100), wMax = clamp(p('rbWMax', 40), 1, 100);
   let hMin = clamp(p('rbHMin', 20), 1, 100), hMax = clamp(p('rbHMax', 100), 1, 100);
   if (wMin > wMax){ const t = wMin; wMin = wMax; wMax = t; }
@@ -3259,7 +3665,7 @@ function addBoxes(rects, label){
 }
 function doRandomBox(){
   if (!S.src.canvas){ toast('先导入图片'); return; }
-  const n = clamp(parseInt(document.getElementById('rbN').value) || 1, 1, 50);
+  const n = clamp(parseInt($('rbN').value) || 1, 1, 50);
   addBoxes(randomBoxes(n), '随机框');
   toast('已随机生成 ' + n + ' 个框');
 }
@@ -3292,11 +3698,11 @@ function buildExportCanvas(scale, bg, includeSrc){
 }
 function doExport(){
   if (!S.src.canvas){ toast('先导入图片'); return; }
-  const fmt   = document.getElementById('exFmt').value;
-  const q     = parseInt(document.getElementById('exQ').value)/100;
-  const bg    = document.getElementById('exBg').value;
-  const scale = parseFloat(document.getElementById('exScale').value);
-  const src   = document.getElementById('exSrc').checked;
+  const fmt   = $('exFmt').value;
+  const q     = parseInt($('exQ').value)/100;
+  const bg    = $('exBg').value;
+  const scale = parseFloat($('exScale').value);
+  const src   = $('exSrc').checked;
 
   const c = buildExportCanvas(scale, bg, src);
   const ext = fmt === 'image/png' ? 'png' : (fmt === 'image/jpeg' ? 'jpg' : 'webp');
@@ -3309,15 +3715,15 @@ function doExport(){
     document.body.appendChild(a); a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     toast('已导出 ' + c.width + '×' + c.height + ' ' + ext.toUpperCase());
-    document.getElementById('modalExport').classList.remove('show');
+    $('modalExport').classList.remove('show');
   }, fmt, q);
 }
 function copyToClipboard(){
   if (!S.src.canvas){ toast('先导入图片'); return; }
   if (!navigator.clipboard || !window.ClipboardItem){ toast('当前环境不支持剪贴板写入，请用「导出」'); return; }
-  const c = buildExportCanvas(parseFloat(document.getElementById('exScale').value),
-                              document.getElementById('exBg').value,
-                              document.getElementById('exSrc').checked);
+  const c = buildExportCanvas(parseFloat($('exScale').value),
+                              $('exBg').value,
+                              $('exSrc').checked);
   c.toBlob(function(blob){
     navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ])
       .then(function(){ toast('已复制到剪贴板'); })
@@ -3334,7 +3740,12 @@ function projectData(){
     v: 3,
     src: S.src.canvas ? S.src.canvas.toDataURL('image/png') : null,
     srcName: S.src.name,
-    layers: JSON.parse(JSON.stringify(S.layers, function(k,v){ return k === '_col' ? undefined : v; })),
+    layers: S.layers.map(function(L){
+      const o = {};
+      for (const k in L){ if (k === '_col' || k === 'img') continue; o[k] = L[k]; }
+      if (L.kind === 'image' && L.img) o.imgData = L.img.toDataURL('image/png');
+      return o;
+    }),
     nextId: S.nextId,
     groups: S.groups, nextGid: S.nextGid,
     showSrc: S.showSrc, srcOpacity: S.srcOpacity, randStrength: S.randStrength
@@ -3368,9 +3779,33 @@ function applyProjectData(d, opt){
     c.width = img.naturalWidth; c.height = img.naturalHeight;
     c.getContext('2d').drawImage(img, 0, 0);
     setSource(c, d.srcName || 'image');
-    S.layers = (d.layers || []).map(function(L){
+    const raw = d.layers || [];
+    /* 位图是 dataURL，解码是异步的 —— 全部就绪后再一次性建层 */
+    Promise.all(raw.map(function(L){
+      if (!L.imgData) return Promise.resolve(null);
+      return new Promise(function(res){
+        const im = new Image();
+        im.onload = function(){
+          const cc = document.createElement('canvas');
+          cc.width = im.naturalWidth; cc.height = im.naturalHeight;
+          cc.getContext('2d').drawImage(im, 0, 0);
+          res(cc);
+        };
+        im.onerror = function(){ res(null); };
+        im.src = L.imgData;
+      });
+    })).then(function(cvs){
+    S.layers = raw.map(function(L, i){
       const base = makeLayer({ x:L.x, y:L.y, w:L.w, h:L.h });
-      return Object.assign(base, L, { _col:null });
+      const o = Object.assign(base, L, { _col:null });
+      delete o.imgData;
+      if (o.kind === 'image' && cvs[i]){
+        o.id = L.id;
+        attachImg(o, cvs[i], L.imgName);
+      } else if (o.kind === 'image'){
+        o.kind = 'stretch';            // 位图丢了就退回拉伸层，至少不报错
+      }
+      return o;
     });
     S.nextId = d.nextId || (S.layers.length+1);
     S.groups = d.groups || {};
@@ -3379,22 +3814,23 @@ function applyProjectData(d, opt){
     S.srcOpacity = (d.srcOpacity === undefined) ? 1 : d.srcOpacity;
     S.randStrength = (d.randStrength === undefined) ? 60 : d.randStrength;
     S.project = { id: opt.id || uid(), name: opt.name || (d.srcName || '未命名工程').replace(/\.[^.]+$/, '') };
-    document.getElementById('srcVisible').checked = S.showSrc;
-    document.getElementById('srcOpacity').value = Math.round(S.srcOpacity*100);
-    document.getElementById('randStr').value = S.randStrength;
+    $('srcVisible').checked = S.showSrc;
+    $('srcOpacity').value = Math.round(S.srcOpacity*100);
+    $('randStr').value = S.randStrength;
     setSel([]); S.undoStack = []; S.redoStack = [];
     pushUndo(true);
-    document.getElementById('btnExport').disabled = false;
-    document.getElementById('btnGrid').disabled = false;
-    document.getElementById('btnGridRe').disabled = false;
-    document.getElementById('btnRandBox').disabled = false;
-    document.getElementById('btnRandAll').disabled = false;
-    document.getElementById('btnRandOrder').disabled = false;
-    document.getElementById('srcInfo').innerHTML =
-      escapeHtml(S.src.name) + '<br>' + S.src.w + ' × ' + S.src.h + ' px';
+    $('btnExport').disabled = false;
+    $('btnGrid').disabled = false;
+    $('btnGridRe').disabled = false;
+    $('btnRandBox').disabled = false;
+    $('btnRandAll').disabled = false;
+    $('btnRandOrder').disabled = false;
+    $('srcInfo').replaceChildren(
+      S.src.name, h('br'), S.src.w + ' × ' + S.src.h + ' px');
     hint.classList.add('hide');
     fitView(); renderAll();
     if (!opt.quiet) toast('工程已载入');
+    });
   };
   img.src = d.src;
 }
@@ -3538,8 +3974,8 @@ function makeProjectCard(rec){
 }
 
 async function renderHome(){
-  const grid = document.getElementById('homeGrid');
-  const empty = document.getElementById('homeEmpty');
+  const grid = $('homeGrid');
+  const empty = $('homeEmpty');
   if (!grid) return;
   let list = [];
   try { list = await Store.all(); } catch (e){ list = []; }
@@ -3562,13 +3998,13 @@ async function openFromLibrary(id){
 }
 
 function enterEditor(){
-  const h = document.getElementById('home');
+  const h = $('home');
   if (h) h.classList.remove('show');
   renderAll();
 }
 function goHome(){
   if (S.src.canvas) saveToLibrary(true);
-  const h = document.getElementById('home');
+  const h = $('home');
   if (h) h.classList.add('show');
   renderHome();
 }
@@ -3579,12 +4015,12 @@ function newProject(){
   S.src = { canvas:null, ctx:null, w:0, h:0, name:'', version: S.src.version + 1 };
   hint.classList.remove('hide');
   ['btnExport','btnGrid','btnGridRe','btnRandBox','btnRandAll','btnRandOrder'].forEach(function(id){
-    const el = document.getElementById(id);
+    const el = $(id);
     if (el) el.disabled = true;
   });
-  document.getElementById('srcInfo').innerHTML = '未载入图片';
+  $('srcInfo').innerHTML = '未载入图片';
   enterEditor();
-  document.getElementById('filePick').click();
+  $('filePick').click();
 }
 
 function openProject(file){
@@ -3600,66 +4036,76 @@ function openProject(file){
 /* =========================================================
    绑定
    ========================================================= */
-const filePick = document.getElementById('filePick');
-document.getElementById('btnOpen').onclick = function(){ filePick.click(); };
+const filePick = $('filePick');
+$('btnOpen').onclick = function(){ filePick.click(); };
 filePick.onchange = function(){ if (filePick.files[0]) loadImageFromFile(filePick.files[0]); filePick.value = ''; };
-document.getElementById('btnExport').onclick = function(){ updateExInfo(); document.getElementById('modalExport').classList.add('show'); };
+$('btnExport').onclick = function(){ updateExInfo(); $('modalExport').classList.add('show'); };
 function updateExInfo(){
-  if (!S.src.canvas){ document.getElementById('exInfo').textContent = ''; return; }
-  const s = parseFloat(document.getElementById('exScale').value);
-  document.getElementById('exInfo').textContent =
+  if (!S.src.canvas){ $('exInfo').textContent = ''; return; }
+  const s = parseFloat($('exScale').value);
+  $('exInfo').textContent =
     '输出尺寸 ' + Math.round(S.src.w*s) + ' × ' + Math.round(S.src.h*s) + ' px  ·  ' +
-    (document.getElementById('exSrc').checked ? '含源图层' : '不含源图层（只剩拉伸层）') +
+    ($('exSrc').checked ? '含源图层' : '不含源图层（只剩拉伸层）') +
     '  ·  可见拉伸层 ' + S.layers.filter(function(x){ return x.visible; }).length + ' 个';
 }
-document.getElementById('exCancel').onclick = function(){ document.getElementById('modalExport').classList.remove('show'); };
-document.getElementById('exGo').onclick = doExport;
-document.getElementById('exCopy').onclick = copyToClipboard;
-document.getElementById('modalExport').addEventListener('click', function(e){
+$('exCancel').onclick = function(){ $('modalExport').classList.remove('show'); };
+$('exGo').onclick = doExport;
+$('exCopy').onclick = copyToClipboard;
+$('modalExport').addEventListener('click', function(e){
   if (e.target === this) this.classList.remove('show');
 });
-document.getElementById('exFmt').onchange = function(){
+$('exFmt').onchange = function(){
   const png = this.value === 'image/png';
-  document.getElementById('exQ').disabled = png;
-  document.getElementById('exQ').style.opacity = png ? .4 : 1;
+  $('exQ').disabled = png;
+  $('exQ').style.opacity = png ? .4 : 1;
 };
-document.getElementById('exScale').onchange = updateExInfo;
-document.getElementById('exSrc').onchange = updateExInfo;
-document.getElementById('btnUndo').onclick = undo;
-document.getElementById('btnRedo').onclick = redo;
-document.getElementById('btnFit').onclick = function(){ fitView(); renderAll(); };
-document.getElementById('btn100').onclick = function(){
+$('exScale').onchange = updateExInfo;
+$('exSrc').onchange = updateExInfo;
+$('btnUndo').onclick = undo;
+$('btnRedo').onclick = redo;
+$('btnFit').onclick = function(){ fitView(); renderAll(); };
+$('btn100').onclick = function(){
   zoomAt(vp.clientWidth/2, vp.clientHeight/2, 1/S.view.s); renderAll(); };
-document.getElementById('zIn').onclick = function(){ zoomCenter(1.2); renderAll(); };
-document.getElementById('zOut').onclick = function(){ zoomCenter(1/1.2); renderAll(); };
-document.getElementById('zFit').onclick = function(){ fitView(); renderAll(); };
-document.getElementById('btnGrid').onclick = makeGrid;
-document.getElementById('btnGridRe').onclick = makeGrid;
-document.getElementById('btnRandBox').onclick = doRandomBox;
-document.getElementById('btnClear').onclick = clearAll;
-document.getElementById('btnMerge').onclick = mergeSelectedShapes;
-document.getElementById('btnGroup').onclick = function(){
+$('zIn').onclick = function(){ zoomCenter(1.2); renderAll(); };
+$('zOut').onclick = function(){ zoomCenter(1/1.2); renderAll(); };
+$('zFit').onclick = function(){ fitView(); renderAll(); };
+$('btnGrid').onclick = makeGrid;
+$('btnGridRe').onclick = makeGrid;
+$('btnRandBox').onclick = doRandomBox;
+$('btnClear').onclick = clearAll;
+$('btnImg').onclick = function(){
+  if (!S.src.canvas){ toast('先导入主图'); return; }
+  $('imgPick').click();
+};
+$('imgPick').onchange = function(e){
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  fileToCanvas(f, function(cv, name){ createImageLayer(cv, name); });
+};
+$('btnMerge').onclick = mergeSelectedShapes;
+$('btnGroup').onclick = function(){
   const ids = selSet();
   const gids = {};
   ids.forEach(function(id){ const L = byId(id); if (L && L.gid) gids[L.gid] = 1; });
   if (Object.keys(gids).length === 1 && ids.length > 1) ungroupSelected();
   else groupSelected();
 };
-const newDirSel = document.getElementById('newDir');
+const newDirSel = $('newDir');
 newDirSel.value = newLayerDir;
 newDirSel.onchange = function(){
   newLayerDir = (this.value === 'v') ? 'v' : 'h';
   toast('新框默认方向：' + (newLayerDir === 'v' ? '垂直 · 上下拉伸' : '水平 · 左右拉伸'));
 };
-document.getElementById('btnUp').onclick = function(){ shiftLayer(1); };
-document.getElementById('btnDown').onclick = function(){ shiftLayer(-1); };
-document.getElementById('btnHelp').onclick = function(){ document.getElementById('modalHelp').classList.add('show'); };
-document.getElementById('helpOk').onclick = function(){ document.getElementById('modalHelp').classList.remove('show'); };
+$('btnUp').onclick = function(){ shiftLayer(1); };
+$('btnDown').onclick = function(){ shiftLayer(-1); };
+$('btnHelp').onclick = function(){ $('modalHelp').classList.add('show'); };
+$('helpOk').onclick = function(){ $('modalHelp').classList.remove('show'); };
 /* 每个弹窗右上角都有个叉，任何位置都能关 */
 Array.prototype.forEach.call(document.querySelectorAll('.modal [data-close]'), function(b){
   b.onclick = function(){ const m = b.closest('.modal'); if (m) m.classList.remove('show'); };
 });
-document.getElementById('srcVisible').onchange = function(){ S.showSrc = this.checked; render(); };
+$('srcVisible').onchange = function(){ S.showSrc = this.checked; render(); };
 /* 静态面板的四个数值行：源图不透明度、随机强度走模型，网格两参数由 makeGrid 现读 */
 bindNum('srcOpacity', function(v){ S.srcOpacity = v/100; });
 bindNum('randStr',   function(v){ S.randStrength = v; });
@@ -3668,12 +4114,12 @@ bindNum('gridOv',    function(){});
 bindNum('gridC',     function(){});
 bindNum('gridR',     function(){});
 bindAllScrubs(document);
-document.getElementById('btnRandAll').onclick = randomizeAll;
-document.getElementById('btnRandOrder').onclick = reseedAll;
-document.getElementById('btnSaveProj').onclick = function(){ saveToLibrary(); };
-  document.getElementById('btnHome').onclick = goHome;
-const projPick = document.getElementById('projPick');
-document.getElementById('btnOpenProj').onclick = function(){ projPick.click(); };
+$('btnRandAll').onclick = randomizeAll;
+$('btnRandOrder').onclick = reseedAll;
+$('btnSaveProj').onclick = function(){ saveToLibrary(); };
+  $('btnHome').onclick = goHome;
+const projPick = $('projPick');
+$('btnOpenProj').onclick = function(){ projPick.click(); };
 projPick.onchange = function(){
   if (projPick.files[0]){ openProject(projPick.files[0]); enterEditor(); }
   projPick.value = '';
@@ -3688,22 +4134,85 @@ window.addEventListener('resize', function(){ render(); });
    ========================================================= */
 const SET_KEYS = ['importDir', 'exportDir', 'projectDir'];
 const SET_LABEL = { importDir:'图片导入目录', exportDir:'导出图片目录', projectDir:'工程文件目录' };
-const hasDesktop = !!(window.desktop && window.desktop.isDesktop);
+/* 运行环境三选一：
+   desktop = 独立桌面版（有 preload，window.desktop 在）
+   hub     = 合集里的 iframe（没有 preload，靠 postMessage 找合集主进程要系统对话框）
+   web     = 浏览器 */
+const IN_HUB = /[?&]host=hub\b/.test(location.search);
+function makeHubBridge(){
+  let seq = 0;
+  const waiting = new Map();
+  window.addEventListener('message', function(e){
+    const d = e.data;
+    if (!d || d.__ts !== 1 || d.id == null) return;
+    const w = waiting.get(d.id);
+    if (!w) return;
+    waiting.delete(d.id);
+    if (d.err) w.reject(new Error(d.err)); else w.resolve(d.res);
+  });
+  const call = function(cmd, args){
+    return new Promise(function(resolve, reject){
+      const id = ++seq;
+      waiting.set(id, { resolve: resolve, reject: reject });
+      try { parent.postMessage({ __ts: 1, id: id, cmd: cmd, args: args || null }, '*'); }
+      catch (err){ waiting.delete(id); reject(err); }
+      setTimeout(function(){
+        if (waiting.has(id)){ waiting.delete(id); reject(new Error('合集没有响应：' + cmd)); }
+      }, 180000);
+    });
+  };
+  /* 文件对话框：合集里没有 setSettings 的消费者，用页面内的文件选择顶上 */
+  const pickFile = function(accept){
+    return new Promise(function(resolve){
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = accept; inp.style.display = 'none';
+      document.body.appendChild(inp);
+      inp.onchange = function(){
+        const f = inp.files && inp.files[0];
+        inp.remove();
+        if (!f){ resolve(null); return; }
+        const fr = new FileReader();
+        fr.onload = function(){ resolve({ data: fr.result, name: f.name }); };
+        fr.onerror = function(){ resolve(null); };
+        fr.readAsArrayBuffer(f);
+      };
+      inp.click();
+    });
+  };
+  return {
+    isDesktop: true, inHub: true,
+    getSettings: function(){
+      try { return Promise.resolve(JSON.parse(localStorage.getItem('ts.settings') || '{}')); }
+      catch (_){ return Promise.resolve({}); }
+    },
+    setSettings: function(s){
+      try { localStorage.setItem('ts.settings', JSON.stringify(s)); } catch (_){}
+      return Promise.resolve(true);
+    },
+    pickFolder: function(title){ return call('pickFolder', title); },
+    openImage: function(){ return pickFile('image/*'); },
+    openProject: function(){ return pickFile('.json,application/json'); }
+  };
+}
+const dsk = (window.desktop && dsk.isDesktop) ? window.desktop
+          : (IN_HUB ? makeHubBridge() : null);
+const hasDesktop = !!dsk;
 let settings = { importDir:'', exportDir:'', projectDir:'' };
 
 function renderSettings(){
   SET_KEYS.forEach(function(k){
-    const el = document.getElementById('set_' + k);
+    const el = $('set_' + k);
     if (el) el.value = settings[k] || '';
   });
-  document.getElementById('setNote').innerHTML = hasDesktop
-    ? '当前是<b>桌面版</b>：可以把下面三项设成你常用的文件夹，之后导入 / 导出 / 存工程都会默认落到那里。'
-    : '当前是<b>网页版</b>：受浏览器限制，下面三项无法影响系统对话框，建议用桌面版 <code>时间拉伸.exe</code>。';
+  $('setNote').replaceChildren.apply($('setNote'), hasDesktop
+    ? ['当前是', h('b', { text: '桌面版' }), '：可以把下面三项设成你常用的文件夹，之后导入 / 导出 / 存工程都会默认落到那里。']
+    : ['当前是', h('b', { text: '网页版' }), '：受浏览器限制，下面三项无法影响系统对话框，建议用桌面版 ',
+       h('code', { text: '时间拉伸.exe' }), '。']);
 }
 async function loadSettings(){
   try {
     if (hasDesktop){
-      const s = await window.desktop.getSettings();
+      const s = await dsk.getSettings();
       if (s) SET_KEYS.forEach(function(k){ if (typeof s[k] === 'string') settings[k] = s[k]; });
     } else {
       const raw = localStorage.getItem('timeStretchSettings');
@@ -3714,17 +4223,17 @@ async function loadSettings(){
 }
 async function persistSettings(){
   try {
-    if (hasDesktop) await window.desktop.setSettings(settings);
+    if (hasDesktop) await dsk.setSettings(settings);
     else localStorage.setItem('timeStretchSettings', JSON.stringify(settings));
   } catch (_){}
   renderSettings();
 }
 document.querySelectorAll('#modalSettings [data-pick]').forEach(function(btn){
   btn.onclick = async function(){
-    if (!hasDesktop){ toast('网页版无法设置系统目录，请用桌面版'); return; }
+    if (!hasDesktop){ toast('浏览器里没有系统目录对话框，请用桌面版或从合集打开'); return; }
     const key = this.getAttribute('data-pick');
     try {
-      const p = await window.desktop.pickFolder('选择「' + SET_LABEL[key] + '」');
+      const p = await dsk.pickFolder('选择「' + SET_LABEL[key] + '」');
       if (p){ settings[key] = p; await persistSettings(); toast('已设置 ' + SET_LABEL[key]); }
     } catch (err){ toast('选择失败：' + err.message); }
   };
@@ -3737,26 +4246,26 @@ document.querySelectorAll('#modalSettings [data-clear]').forEach(function(btn){
     toast('已清除 ' + SET_LABEL[key]);
   };
 });
-document.getElementById('setReset').onclick = async function(){
+$('setReset').onclick = async function(){
   SET_KEYS.forEach(function(k){ settings[k] = ''; });
   await persistSettings();
   toast('已清除全部默认目录');
 };
-document.getElementById('setClose').onclick = function(){
-  document.getElementById('modalSettings').classList.remove('show');
+$('setClose').onclick = function(){
+  $('modalSettings').classList.remove('show');
 };
-document.getElementById('modalSettings').addEventListener('click', function(e){
+$('modalSettings').addEventListener('click', function(e){
   if (e.target === this) this.classList.remove('show');
 });
-document.getElementById('btnSettings').onclick = function(){
+$('btnSettings').onclick = function(){
   renderSettings();
-  document.getElementById('modalSettings').classList.add('show');
+  $('modalSettings').classList.add('show');
 };
 
 /* 桌面版：用 Electron 原生对话框打开图片 / 工程，才能带上默认目录 */
 async function openImageDesktop(){
   try {
-    const r = await window.desktop.openImage();
+    const r = await dsk.openImage();
     if (!r || !r.data) return;
     const url = URL.createObjectURL(new Blob([r.data]));
     const img = new Image();
@@ -3767,14 +4276,14 @@ async function openImageDesktop(){
 }
 async function openProjectDesktop(){
   try {
-    const r = await window.desktop.openProject();
+    const r = await dsk.openProject();
     if (!r || !r.data) return;
     openProject(new Blob([r.data]));
   } catch (err){ toast('打开工程失败：' + err.message); }
 }
 if (hasDesktop){
-  document.getElementById('btnOpen').onclick = openImageDesktop;
-  document.getElementById('btnOpenProj').onclick = openProjectDesktop;
+  $('btnOpen').onclick = openImageDesktop;
+  $('btnOpenProj').onclick = openProjectDesktop;
 }
 loadSettings();
 
@@ -3795,11 +4304,11 @@ Array.prototype.forEach.call(document.querySelectorAll('#segUiScale button'), fu
   };
 });
 
-document.getElementById('btnTheme').onclick = function(){
+$('btnTheme').onclick = function(){
   applyTheme(PAL.light ? 'dark' : 'light');
 };
-document.getElementById('btnHintOpen').onclick = function(){
-  document.getElementById('filePick').click();
+$('btnHintOpen').onclick = function(){
+  $('filePick').click();
 };
 
 /* 分组展开状态跟着用户走，renderProps 重建 DOM 时不会弹回去 */
@@ -3810,11 +4319,11 @@ propsEl.addEventListener('toggle', function(e){
 
 /* 左侧「随机网格 / 随机框选」两个面板用分段控件切换 */
 (function initAutoSeg(){
-  const seg = document.getElementById('autoSeg');
+  const seg = $('autoSeg');
   if (!seg) return;
   const panes = {
-    grid: document.getElementById('paneGrid'),
-    rand: document.getElementById('paneRand')
+    grid: $('paneGrid'),
+    rand: $('paneRand')
   };
   seg.addEventListener('click', function(e){
     const b = e.target.closest('button[data-pane]');
@@ -3830,18 +4339,18 @@ propsEl.addEventListener('toggle', function(e){
 
 /* 拉伸方向：分段控件是门面，真正的值仍存在 select#newDir 里（工程文件与快捷键都读它） */
 function syncDirSeg(){
-  const sel = document.getElementById('newDir');
-  const seg = document.getElementById('dirSeg');
+  const sel = $('newDir');
+  const seg = $('dirSeg');
   if (!sel || !seg) return;
   const v = sel.value;
   Array.prototype.forEach.call(seg.querySelectorAll('button'), function(b){
     b.classList.toggle('on', b.getAttribute('data-dir') === v);
   });
 }
-document.getElementById('dirSeg').addEventListener('click', function(e){
+$('dirSeg').addEventListener('click', function(e){
   const b = e.target.closest('button[data-dir]');
   if (!b) return;
-  const sel = document.getElementById('newDir');
+  const sel = $('newDir');
   sel.value = b.getAttribute('data-dir');
   syncDirSeg();
   if (sel.onchange) sel.onchange.call(sel);
@@ -3866,7 +4375,7 @@ document.getElementById('dirSeg').addEventListener('click', function(e){
     } catch(_){}
   }
   function bind(id, side){
-    const el = document.getElementById(id);
+    const el = $(id);
     if (!el) return;
     const prop = side === 'l' ? '--w-left-base' : '--w-right-base';
     const lim  = side === 'l' ? [200, 460] : [250, 520];
@@ -3908,8 +4417,20 @@ document.getElementById('dirSeg').addEventListener('click', function(e){
 (function initTheme(){
   let t = 'dark';
   try { t = localStorage.getItem('ts.theme') || 'dark'; } catch(_){}
+  /* 合集壳用 ?theme= 传主题过来 —— file:// 下跨源写不了本页的 localStorage */
+  try {
+    const q = new URLSearchParams(location.search).get('theme');
+    if (q === 'light' || q === 'dark') t = q;
+  } catch(_){}
   applyTheme(t, true);
 })();
+
+/* Ctrl+\ ：隐藏 / 恢复两侧面板，用来看画面本身 */
+function toggleUI(){
+  const on = document.body.classList.toggle('hide-ui');
+  renderAll();
+  toast(on ? '面板已隐藏 · Ctrl+\\ 恢复' : '面板已恢复');
+}
 
 /* 启动 */
 enhanceSelects(document);
@@ -3917,11 +4438,11 @@ initSegs(document);
 loadUiPrefs();
 applyUiPrefs(true);
 renderAll();
-document.getElementById('homeNew').onclick = newProject;
-document.getElementById('homeOpenFile').onclick = function(){
-  document.getElementById('projPick').click();
+$('homeNew').onclick = newProject;
+$('homeOpenFile').onclick = function(){
+  $('projPick').click();
 };
-document.getElementById('home').classList.add('show');
+$('home').classList.add('show');
 Store.open().then(renderHome).catch(function(){ renderHome(); });
 
 /* 便于自动化测试 / 高级用户 */
@@ -3945,6 +4466,10 @@ window.__tool = {
   randomBoxes: randomBoxes,
   sampleLine: sampleLine,
   copyLayer: copyLayer,
+  createImageLayer: createImageLayer,
+  pushUndo: pushUndo,
+  restore: restore,
+  projectData: projectData,
   groupSelected: groupSelected,
   mergeSelectedShapes: mergeSelectedShapes,
   home: {
