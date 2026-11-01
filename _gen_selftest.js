@@ -1353,6 +1353,17 @@ const BODY = `
         R.push((wantIds.indexOf(A1.id) >= 0 || T.selSet().indexOf(A1.id) < 0 ? 'PASS' : 'FAIL') + ' 没扫到的行不被选中');
         R.push((lz.style.display === 'none' ? 'PASS' : 'FAIL') + ' 松手后矩形收起');
 
+        /* 列表真的被重建过（改参数会让签名变化）—— 框选矩形会被一起摘掉，
+           第二次框选必须还能画出来 */
+        T.S.layers[0].block = 2; T.render();
+        LIST.dispatchEvent(new PointerEvent('pointerdown', at(bot)));
+        LIST.dispatchEvent(new PointerEvent('pointermove', at(top)));
+        var lz2 = LIST.querySelector('.lasso');
+        R.push((lz2 && lz2.isConnected && lz2.style.display !== 'none'
+                ? 'PASS' : 'FAIL') + ' 第二次框选仍能画出矩形');
+        LIST.dispatchEvent(new PointerEvent('pointerup', at(top)));
+        chk('第二次框选结果一致', T.selSet().length, 2);
+
         /* 行上按下仍然走排序，不触发框选 */
         var rowTop0 = rowsL()[0].offsetTop + 4;
         rowsL()[0].dispatchEvent(new PointerEvent('pointerdown', at(rowTop0)));

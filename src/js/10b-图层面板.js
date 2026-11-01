@@ -300,7 +300,9 @@ function listPointY(e){
   return e.clientY - r.top + listEl.scrollTop;
 }
 function ensureLasso(){
-  if (!lassoEl){
+  /* renderAll 会 replaceChildren 整个列表，框选矩形会被一起摘掉 ——
+     所以每次都要确认它还挂在上面，否则第二次框选时就画不出来了 */
+  if (!lassoEl || !lassoEl.isConnected){
     lassoEl = h('div', { class: 'lasso' });
     listEl.appendChild(lassoEl);
   }
