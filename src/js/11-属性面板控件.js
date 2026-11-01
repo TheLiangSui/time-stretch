@@ -87,6 +87,9 @@ function bindNum(idOrEl, after, bounds){
   el._apply = apply;
   el._last  = function(){ return last; };
   el._paint = function(){ paintBar(last); };
+  /* 数据条要按「指针位置 → 数值」换算，必须拿到当前生效的上下限
+     （X 的上限跟着宽度走，光读 DOM 属性会过期） */
+  el._bounds = getB;
   el.addEventListener('change', function(){
     beginLive('n:' + inputId);
     apply(parseFloat(el.value));
@@ -139,6 +142,65 @@ function bindIcoScrub(icoEl){
     endLive(); syncButtons();
   });
 }
+/* 数据条拖拽：指针在条上的位置，直接决定数值 —— 条填到哪，手就在哪。
+   不能和图标共用「1px = 1 步」：条只有一百来像素宽，却要表达 0~1200
+   这种范围，拖 10px 条只挪 10px/范围，看着就像在拖图标而不是拖条。 */
+function bindBarScrub(barEl){
+  if (!barEl || barEl._scrub) return;
+  const el = barEl._numEl || $(barEl.getAttribute('data-scrub') || '');
+  if (!el || !el._apply) return;
+  barEl._scrub = true;
+  let on = false, rect = null, grabDx = 0;
+
+  const span = function(){
+    const b = el._bounds ? el._bounds() : { min: parseFloat(el.min), max: parseFloat(el.max) };
+    return {
+      lo: isFinite(b.min) ? b.min : 0,
+      hi: isFinite(b.max) ? b.max : 100
+    };
+  };
+  /* 指针 x → 数值：% 位置乘范围。grabDx 让「按住锚点起手」不跳一下 */
+  const valueAt = function(clientX){
+    const b = span();
+    if (!rect || rect.width <= 0) return b.lo;
+    let t = (clientX - grabDx - rect.left) / rect.width;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    return b.lo + t * (b.hi - b.lo);
+  };
+
+  barEl.addEventListener('pointerdown', function(e){
+    if (e.button !== 0 || el.disabled) return;
+    rect = barEl.getBoundingClientRect();
+    const b = span();
+    const cur = parseFloat(el.value);
+    const v0 = isFinite(cur) ? cur : el._last();
+    const p = (b.hi > b.lo) ? (v0 - b.lo) / (b.hi - b.lo) : 0;
+    const thumbX = rect.left + Math.max(0, Math.min(1, p)) * rect.width;
+    /* 按在锚点上（±9px）= 抓住它，全程保持这个偏移，不闪；
+       按在别处 = 直接把读数挪过去，条从落点开始跟手 */
+    grabDx = (Math.abs(e.clientX - thumbX) <= 9) ? (e.clientX - thumbX) : 0;
+    on = true;
+    beginLive('bar:' + el.id);
+    barEl.classList.add('scrubbing');
+    try { barEl.setPointerCapture(e.pointerId); } catch(_){}
+    el._apply(valueAt(e.clientX));
+    e.preventDefault(); e.stopPropagation();
+  });
+  barEl.addEventListener('pointermove', function(e){
+    if (!on) return;
+    el._apply(valueAt(e.clientX));
+  });
+  const end = function(){
+    if (!on) return;
+    on = false; grabDx = 0;
+    barEl.classList.remove('scrubbing');
+    endLive(); syncButtons();
+  };
+  barEl.addEventListener('pointerup', end);
+  barEl.addEventListener('pointercancel', end);
+  /* 指针捕获被系统收走（切窗口、触控被抢）也要收尾，否则下次划过就改数值 */
+  barEl.addEventListener('lostpointercapture', end);
+}
 /* 给每个数值单元补一条数据条（标记里不写，省得到处重复） */
 function ensureBars(root){
   const cells = (root || document).querySelectorAll('.cell');
@@ -159,8 +221,12 @@ function ensureBars(root){
 function bindAllScrubs(root){
   root = root || document;
   ensureBars(root);
-  const icos = root.querySelectorAll('[data-scrub]');
-  for (let i = 0; i < icos.length; i++) bindIcoScrub(icos[i]);
+  const hot = root.querySelectorAll('[data-scrub]');
+  for (let i = 0; i < hot.length; i++){
+    /* 图标按步长拖，数据条按位置拖 —— 两种映射，别串 */
+    if (hot[i].classList.contains('sbar')) bindBarScrub(hot[i]);
+    else bindIcoScrub(hot[i]);
+  }
   /* 数据条是后补的，绑定完补画一次填充 */
   const nums = root.querySelectorAll('input[type=number][id]');
   for (let i = 0; i < nums.length; i++) if (nums[i]._paint) nums[i]._paint();

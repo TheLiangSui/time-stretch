@@ -992,21 +992,64 @@
       chk('拖动时锚点浮现', getComputedStyle(knobEl).opacity, '1');
       barTmp.classList.remove('scrubbing');
 
-      /* N2 拖数据条改数值 */
+      /* N2 拖数据条：指针指到哪、条就填到哪。
+         回归点：老写法和小图标共用「1px = 1 步」，范围一大条就追不上手
+         （X 有上千的跨度，拖 30px 条只动 3%，手感像在拖图标）。 */
       var barEl = barTmp;
-      var bv0 = T.S.layers[0].block;
-      barEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true, cancelable:true,
-        pointerId:61, button:0, clientX:300, clientY:500 }));
-      barEl.dispatchEvent(new PointerEvent('pointermove', { bubbles:true,
-        pointerId:61, clientX:308, clientY:500 }));
-      barEl.dispatchEvent(new PointerEvent('pointerup', { bubbles:true,
-        pointerId:61, clientX:308, clientY:500 }));
-      chk('拖数据条 +8px 后数值 +8', T.S.layers[0].block, bv0 + 8);
-      var fillW = parseInt(document.querySelector('#props .sbar[data-scrub="pBlockV"]>i').style.width, 10);
-      R.push((fillW > 0 ? 'PASS' : 'FAIL') + ' 数据条填充跟随数值 ' + fillW + '%');
+      var blockBox = document.getElementById('pBlockV');
+      /* 先把值归到最小，锚点落到条的最左端 —— 这样后面按在 60% 处
+         一定离锚点很远，不会误触「抓住锚点」的不跳分支 */
+      blockBox.value = blockBox.min;
+      blockBox.dispatchEvent(new Event('change', { bubbles:true }));
+      chk('先把分组像素归到下限', T.S.layers[0].block, parseFloat(blockBox.min));
+
+      var br = barEl.getBoundingClientRect();
+      var bx = function(f){ return br.left + br.width * f; };
+      var blk = blockBox._bounds ? blockBox._bounds()
+              : { min: parseFloat(blockBox.min), max: parseFloat(blockBox.max) };
+      var pev = function(type, x){
+        barEl.dispatchEvent(new PointerEvent(type, { bubbles:true, cancelable:true,
+          pointerId:61, button:0, clientX:x, clientY:br.top + 2 }));
+      };
+      pev('pointerdown', bx(0.6));
+      chk('按在条的 60% 处 = 数值直接跳过去', T.S.layers[0].block,
+          Math.round(blk.min + 0.6 * (blk.max - blk.min)));
+      pev('pointermove', bx(0.85));
+      pev('pointerup', bx(0.85));
+      chk('拖到 85% 处数值同步到 85%', T.S.layers[0].block,
+          Math.round(blk.min + 0.85 * (blk.max - blk.min)));
+      var fillW = parseFloat(document.querySelector('#props .sbar[data-scrub="pBlockV"]>i').style.width);
+      R.push((Math.abs(fillW - 85) < 1.5 ? 'PASS' : 'FAIL') +
+             ' 数据条填充贴着指针（目标 85%，实得 ' + fillW.toFixed(1) + '%）');
       var pv = parseFloat(document.querySelector('#props .sbar[data-scrub="pBlockV"]').style.getPropertyValue('--p'));
-      R.push((Math.abs(pv - fillW) < 1.5 ? 'PASS' : 'FAIL') +
-             ' 锚点位置跟着数值走 got=' + pv.toFixed(1) + '%');
+      R.push((Math.abs(pv - 85) < 1.5 ? 'PASS' : 'FAIL') +
+             ' 锚点贴着指针 got=' + pv.toFixed(1) + '%');
+
+      /* 按在锚点本身上：不许闪一下再走 —— 抓住哪个点，那个点就跟着手 */
+      var vGrab = T.S.layers[0].block;
+      pev('pointerdown', bx(0.85));
+      chk('按在锚点上起手不跳数', T.S.layers[0].block, vGrab);
+      pev('pointerup', bx(0.85));
+
+      /* 几何参数 X 的上下限是动态算的，条同样要按位置取值 */
+      var xBox = document.getElementById('pX');
+      xBox.value = '0'; xBox.dispatchEvent(new Event('change', { bubbles:true }));
+      var barX = document.querySelector('#props .sbar[data-scrub="pX"]');
+      var xr = barX.getBoundingClientRect();
+      var xb = xBox._bounds ? xBox._bounds()
+             : { min: parseFloat(xBox.min), max: parseFloat(xBox.max) };
+      var xev = function(type, x){
+        barX.dispatchEvent(new PointerEvent(type, { bubbles:true, cancelable:true,
+          pointerId:62, button:0, clientX:x, clientY:xr.top + 2 }));
+      };
+      xev('pointerdown', xr.left + xr.width * 0.6);
+      xev('pointermove', xr.left + xr.width * 0.85);
+      xev('pointerup', xr.left + xr.width * 0.85);
+      chk('X（' + xb.min + '~' + xb.max + '）拖到 85% 处', T.S.layers[0].x,
+          Math.round(xb.min + 0.85 * (xb.max - xb.min)));
+      var fillX = parseFloat(document.querySelector('#props .sbar[data-scrub="pX"]>i').style.width);
+      R.push((Math.abs(fillX - 85) < 1.5 ? 'PASS' : 'FAIL') +
+             ' 几何参数 X 也跟手（目标 85%，实得 ' + fillX.toFixed(1) + '%）');
 
       /* 数据条只是拖拽区，不改鼠标形状；也不应该在悬停时把底槽弄丢 */
       var barCss = getComputedStyle(document.querySelector('#props .sbar[data-scrub="pBlockV"]'));
