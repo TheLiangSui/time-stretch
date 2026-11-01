@@ -99,14 +99,14 @@ npm start                         # 不打包，直接以 Electron 调试
 
 ### 自测
 
-340 条断言，覆盖取样位置、方块分组、调色、撤销、图层栈、下拉 / 弹窗 / 缩放条、渲染调度等 UI 行为，用本机 Edge 无头模式跑：
+344 条断言，覆盖取样位置、方块分组、调色、撤销、图层栈、下拉 / 弹窗 / 缩放条、渲染调度等 UI 行为，用本机 Edge 无头模式跑：
 
 ```bash
 npm run check                     # 构建 + 生成测试页 + 跑全套
 ```
 
 ```
-TOTAL=340 FAILS=0 VERDICT=ALL_PASS
+TOTAL=344 FAILS=0 VERDICT=ALL_PASS
 ```
 
 生成器还支持故意破坏（`node _gen_selftest.js broken`）—— 把采样列强制挪到矩形左边缘，用来验证测试本身抓得住错误，而不是一路绿灯。
@@ -135,8 +135,9 @@ docs/               技术规格 + 重构记录
 
 ```bash
 # 只改 src/ 下的文件；index.html 是构建产物，手改会在下次构建时被覆盖
-npm run check        # 静态检查 → 构建 → 生成测试页 → 跑 340 项（任一步失败即非 0 退出）
+npm run check        # 静态检查 → CSS 变量扫描 → 构建 → 344 项自测（任一步失败即非 0 退出）
 npm run lint         # 只跑静态检查
+npm run check:css    # 只扫未定义的 CSS 变量
 ```
 
 静态检查用 ESLint 的「查错」规则（`no-undef` / `no-redeclare` / `no-dupe-keys` / …），
