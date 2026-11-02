@@ -21,7 +21,10 @@ const S = {
   randStrength: 60,
   clipboard: null,        // 图层剪贴板（Ctrl+C / Ctrl+V）
   pasteCount: 0,          // 连续粘贴时用来逐次错开
-  undoStack: [], redoStack: []
+  undoStack: [], redoStack: [],
+  _dirtySeq: 0,           // 每次真实改动 +1，用来判断「有没有新东西要存」
+  _savedSeq: -1,          // 最近一次落盘时的 _dirtySeq
+  _autoSaves: 0           // 静默存盘次数（自测用）
 };
 const MAX_UNDO = 80;
 /* S.sel 是对外的「主选中」。任何直接赋值都视为单选（自动收敛多选集合），

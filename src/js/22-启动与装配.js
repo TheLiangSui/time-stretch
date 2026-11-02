@@ -172,6 +172,8 @@ window.__tool = {
       return true;
     }
   },
+  /* 自动保存：flush 走的是真实路径（受开关约束），自测靠它代替等 2.2 秒定时器 */
+  autoSave: { flush: autoSaveFlush, cancel: autoSaveCancel, enabled: autoSaveOn },
   ungroupSelected: ungroupSelected,
   setSel: setSel,
   selSet: selSet,

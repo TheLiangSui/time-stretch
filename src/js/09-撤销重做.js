@@ -18,6 +18,9 @@ function pushUndo(silent){
   if (S.undoStack.length > MAX_UNDO) S.undoStack.shift();
   S.redoStack.length = 0;
   if (!silent) syncButtons();
+  /* 每次真实改动都记一笔，并重新计时自动保存（攒到停手才写盘） */
+  S._dirtySeq = (S._dirtySeq || 0) + 1;
+  scheduleAutoSave();
 }
 let liveKey = null, nudgeT = 0, nudgeR = 0;
 function beginLive(key){ if (liveKey === key) return; liveKey = key; pushUndo(); }
@@ -45,11 +48,15 @@ function undo(){
   if (!S.undoStack.length) return;
   S.redoStack.push(snapshot());
   restore(S.undoStack.pop());
+  S._dirtySeq = (S._dirtySeq || 0) + 1;
+  scheduleAutoSave();
   renderAll();
 }
 function redo(){
   if (!S.redoStack.length) return;
   S.undoStack.push(snapshot());
   restore(S.redoStack.pop());
+  S._dirtySeq = (S._dirtySeq || 0) + 1;
+  scheduleAutoSave();
   renderAll();
 }

@@ -107,8 +107,38 @@ async function saveToLibrary(silent){
   };
   try { await Store.put(rec); }
   catch (e){ if (!silent) toast('保存失败：' + (e.message || e)); return false; }
+  S._savedSeq = S._dirtySeq;          // 记下「这个版本已经落盘」
   if (!silent) toast('已保存到项目库：' + name);
   return true;
+}
+
+/* =========================================================
+   自动保存
+   ---------------------------------------------------------
+   编辑停下 AUTO_SAVE_MS 后静默存一次盘；没改动就不写。
+   开关在设置里（默认开），关掉之后这里一次都不会写 —— 连「回首页顺手存一次」
+   也走同一条闸门，不给「擅自保存」留后门。
+   ========================================================= */
+const AUTO_SAVE_MS = 2200;
+let autoSaveT = 0;
+function autoSaveOn(){ return settings.autoSave !== false; }
+function autoSaveCancel(){
+  if (autoSaveT){ clearTimeout(autoSaveT); autoSaveT = 0; }
+}
+/* 立刻存一次（仍然受开关约束）。返回是否真的写了盘。 */
+function autoSaveFlush(){
+  autoSaveCancel();
+  if (!autoSaveOn()) return false;
+  if (!S.src.canvas) return false;
+  if (S._savedSeq === S._dirtySeq) return false;
+  S._autoSaves = (S._autoSaves || 0) + 1;
+  saveToLibrary(true);
+  return true;
+}
+function scheduleAutoSave(){
+  if (!autoSaveOn()) return;
+  autoSaveCancel();
+  autoSaveT = setTimeout(function(){ autoSaveT = 0; autoSaveFlush(); }, AUTO_SAVE_MS);
 }
 
 function makeProjectCard(rec){
@@ -166,7 +196,7 @@ function enterEditor(){
   renderAll();
 }
 function goHome(){
-  if (S.src.canvas) saveToLibrary(true);
+  if (S.src.canvas) autoSaveFlush();      // 受自动保存开关约束；没改动不写
   const h = $('home');
   if (h) h.classList.add('show');
   renderHome();

@@ -68,13 +68,16 @@ function makeHubBridge(){
 const dsk = (window.desktop && dsk.isDesktop) ? window.desktop
           : (IN_HUB ? makeHubBridge() : null);
 const hasDesktop = !!dsk;
-let settings = { importDir:'', exportDir:'', projectDir:'' };
+/* autoSave 默认开：缺省即开，只有明确存过 false 才算关 */
+let settings = { importDir:'', exportDir:'', projectDir:'', autoSave:true };
 
 function renderSettings(){
   SET_KEYS.forEach(function(k){
     const el = $('set_' + k);
     if (el) el.value = settings[k] || '';
   });
+  const sw = $('set_autoSave');
+  if (sw) sw.checked = autoSaveOn();
   $('setNote').replaceChildren.apply($('setNote'), hasDesktop
     ? ['当前是', h('b', { text: '桌面版' }), '：可以把下面三项设成你常用的文件夹，之后导入 / 导出 / 存工程都会默认落到那里。']
     : ['当前是', h('b', { text: '网页版' }), '：受浏览器限制，下面三项无法影响系统对话框，建议用桌面版 ',
@@ -84,10 +87,17 @@ async function loadSettings(){
   try {
     if (hasDesktop){
       const s = await dsk.getSettings();
-      if (s) SET_KEYS.forEach(function(k){ if (typeof s[k] === 'string') settings[k] = s[k]; });
+      if (s){
+        SET_KEYS.forEach(function(k){ if (typeof s[k] === 'string') settings[k] = s[k]; });
+        if (typeof s.autoSave === 'boolean') settings.autoSave = s.autoSave;
+      }
     } else {
       const raw = localStorage.getItem('timeStretchSettings');
-      if (raw) SET_KEYS.forEach(function(k){ if (typeof JSON.parse(raw)[k] === 'string') settings[k] = JSON.parse(raw)[k]; });
+      const s = raw ? JSON.parse(raw) : null;
+      if (s){
+        SET_KEYS.forEach(function(k){ if (typeof s[k] === 'string') settings[k] = s[k]; });
+        if (typeof s.autoSave === 'boolean') settings.autoSave = s.autoSave;
+      }
     }
   } catch (_){}
   renderSettings();
@@ -99,6 +109,14 @@ async function persistSettings(){
   } catch (_){}
   renderSettings();
 }
+/* 自动保存开关：关掉的同时把已经排队的那次撤掉，避免「刚关就写了一次」 */
+$('set_autoSave').onchange = async function(){
+  settings.autoSave = !!this.checked;
+  if (!settings.autoSave) autoSaveCancel();
+  await persistSettings();
+  toast(settings.autoSave ? '自动保存已开启' : '自动保存已关闭：之后不会自动写盘');
+};
+
 document.querySelectorAll('#modalSettings [data-pick]').forEach(function(btn){
   btn.onclick = async function(){
     if (!hasDesktop){ toast('浏览器里没有系统目录对话框，请用桌面版或从合集打开'); return; }

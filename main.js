@@ -24,7 +24,8 @@ const SMOKE = IS_SMOKE;
 
 /* =========================================================
    设置持久化：userData/settings.json
-   { importDir, exportDir, projectDir }
+   { importDir, exportDir, projectDir, autoSave }
+   autoSave 只在被关掉时写 false —— 默认开着，不必占文件一行
    ========================================================= */
 function settingsPath(){ return path.join(app.getPath('userData'), 'settings.json'); }
 function readSettings(){
@@ -36,6 +37,8 @@ function writeSettings(s){
   for (const k of ['importDir', 'exportDir', 'projectDir']){
     if (s && typeof s[k] === 'string' && s[k].trim()) clean[k] = s[k].trim();
   }
+  /* 默认开启：只有「明确关掉」才需要落盘，读的时候缺省即视为开 */
+  if (s && s.autoSave === false) clean.autoSave = false;
   try { fs.writeFileSync(settingsPath(), JSON.stringify(clean, null, 2), 'utf8'); }
   catch (e) { console.error('写设置失败: ' + e.message); }
   return clean;

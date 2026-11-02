@@ -19,6 +19,26 @@ function setSource(canvas, name){
     version: (S.src.version || 0) + 1
   };
 }
+/* 删除源图层：连画布一起清空，回到「等待导入」的状态。
+   源图像素不在撤销快照里（快照只存图层参数），留着撤销栈只会得到
+   「图层回来了、源图没回来」的半截状态，所以这里把撤销栈一并清掉。 */
+function removeSource(){
+  if (!S.src.canvas) return;
+  const n = S.layers.length;
+  if (!confirm('删除源图层？' + (n ? '画布上 ' + n + ' 个拉伸层会一起清空，' : '') +
+               '撤销记录也会清空。删掉之后可以重新导入一张图。')) return;
+  S.src = { canvas:null, ctx:null, w:0, h:0, name:'', version: S.src.version + 1 };
+  S.layers = []; setSel([]);
+  S.groups = {}; S.nextGid = 1; S.hover = null;
+  S.undoStack = []; S.redoStack = [];
+  hint.classList.remove('hide');
+  ['btnExport','btnTile','btnTileRe','btnRandAll','btnRandOrder'].forEach(function(id){
+    const el = $(id);
+    if (el) el.disabled = true;
+  });
+  $('srcInfo').textContent = '未载入图片';
+  renderAll();
+}
 function ingestImage(img, name){
   const c = document.createElement('canvas');
   c.width  = img.naturalWidth  || img.width;

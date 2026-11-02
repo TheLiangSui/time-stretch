@@ -284,6 +284,14 @@ aside.right>.rz{left:-4px}
 .li .eye:hover{background:var(--bg-field-2); color:var(--t2)}
 .li .eye.on{color:var(--t3)}
 .li .eye.off{color:var(--t4); opacity:.55}
+/* 源图层行：删除只在悬停时露出来，平时不抢眼 */
+.li .del{
+  width:calc(18px * var(--ui)); height:calc(18px * var(--ui)); flex:0 0 calc(18px * var(--ui)); border-radius:3px;
+  display:grid; place-items:center; color:var(--t4); cursor:pointer;
+  opacity:0; transition:opacity .12s var(--ease), color .12s var(--ease), background .12s var(--ease);
+}
+.li:hover .del{opacity:.75}
+.li .del:hover{background:var(--warn-soft); color:var(--warn); opacity:1}
 
 /* ---- 合集行 ---- */
 .li.grp-row{
@@ -691,6 +699,28 @@ kbd{
 .setrow>input{color:var(--t2); font-size:calc(11px * var(--ui))}
 .setrow>button{height:26px; font-size:calc(11.5px * var(--ui)); padding:0 7px}
 
+/* 开关：凹槽 + 会滑动的圆点，尺寸跟着 --ui 走 */
+.switch{display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0}
+.switch input{position:absolute; width:0; height:0; opacity:0; pointer-events:none}
+.sw-track{
+  position:relative; flex:0 0 auto;
+  width:calc(32px * var(--ui)); height:calc(18px * var(--ui));
+  border-radius:999px; background:var(--bg-track);
+  border:1px solid var(--line);
+  transition:background .16s var(--ease), border-color .16s var(--ease);
+}
+.sw-dot{
+  position:absolute; top:50%; left:2px;
+  width:calc(12px * var(--ui)); height:calc(12px * var(--ui));
+  margin-top:calc(-6px * var(--ui)); border-radius:50%;
+  background:var(--t4); transition:transform .18s var(--ease), background .16s var(--ease);
+}
+.switch input:checked + .sw-track{background:var(--ac); border-color:transparent}
+.switch input:checked + .sw-track .sw-dot{transform:translateX(calc(14px * var(--ui))); background:#fff}
+.switch input:focus-visible + .sw-track{box-shadow:0 0 0 3px var(--ac-soft)}
+.switch:hover .sw-dot{background:var(--t2)}
+.sw-txt{color:var(--t3); font-size:calc(11px * var(--ui)); line-height:1.55; min-width:0}
+
 #toast{
   position:fixed; left:50%; bottom:44px;
   transform:translateX(-50%) translateY(8px);
@@ -972,6 +1002,8 @@ kbd{
       <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></td><td>复制 / 剪切 / 粘贴图层（连续粘贴自动错开）</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd></td><td>从系统剪贴板粘贴图片</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>原地复制一层 / 导入图片</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>保存到项目库 / 导出 .json 工程（开着自动保存时，改完停手就自动存）</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd> / <kbd>Ctrl</kbd>+<kbd>,</kbd></td><td>打开工程文件 / 设置</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>撤销 / 重做（焦点在参数框里也有效）</td></tr>
       <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>图层下沉 / 上浮</td></tr>
       <tr><td><kbd>Shift</kbd> / <kbd>Ctrl</kbd>+点击图层行</td><td>多选；<kbd>Shift</kbd> 是「从上次点的那行到这里」整段选</td></tr>
@@ -1006,6 +1038,14 @@ kbd{
     <div class="cardm-body">
     <h3>设置</h3>
     <p class="sub-title">界面偏好与默认目录</p>
+    <div class="setrow" style="grid-template-columns:76px 1fr; margin-bottom:12px">
+      <label>自动保存</label>
+      <label class="switch" for="set_autoSave">
+        <input type="checkbox" id="set_autoSave" checked>
+        <span class="sw-track"><span class="sw-dot"></span></span>
+        <span class="sw-txt">改完停手约 2 秒自动存进项目库；关掉后不再自动写盘</span>
+      </label>
+    </div>
     <div class="setrow" style="grid-template-columns:76px 1fr; margin-bottom:10px">
       <label>数值调整</label>
       <div class="seg" id="segNumMode">
@@ -1081,7 +1121,10 @@ const S = {
   randStrength: 60,
   clipboard: null,        // 图层剪贴板（Ctrl+C / Ctrl+V）
   pasteCount: 0,          // 连续粘贴时用来逐次错开
-  undoStack: [], redoStack: []
+  undoStack: [], redoStack: [],
+  _dirtySeq: 0,           // 每次真实改动 +1，用来判断「有没有新东西要存」
+  _savedSeq: -1,          // 最近一次落盘时的 _dirtySeq
+  _autoSaves: 0           // 静默存盘次数（自测用）
 };
 const MAX_UNDO = 80;
 /* S.sel 是对外的「主选中」。任何直接赋值都视为单选（自动收敛多选集合），
@@ -1334,6 +1377,26 @@ function setSource(canvas, name){
     w: canvas.width, h: canvas.height, name: name || 'image',
     version: (S.src.version || 0) + 1
   };
+}
+/* 删除源图层：连画布一起清空，回到「等待导入」的状态。
+   源图像素不在撤销快照里（快照只存图层参数），留着撤销栈只会得到
+   「图层回来了、源图没回来」的半截状态，所以这里把撤销栈一并清掉。 */
+function removeSource(){
+  if (!S.src.canvas) return;
+  const n = S.layers.length;
+  if (!confirm('删除源图层？' + (n ? '画布上 ' + n + ' 个拉伸层会一起清空，' : '') +
+               '撤销记录也会清空。删掉之后可以重新导入一张图。')) return;
+  S.src = { canvas:null, ctx:null, w:0, h:0, name:'', version: S.src.version + 1 };
+  S.layers = []; setSel([]);
+  S.groups = {}; S.nextGid = 1; S.hover = null;
+  S.undoStack = []; S.redoStack = [];
+  hint.classList.remove('hide');
+  ['btnExport','btnTile','btnTileRe','btnRandAll','btnRandOrder'].forEach(function(id){
+    const el = $(id);
+    if (el) el.disabled = true;
+  });
+  $('srcInfo').textContent = '未载入图片';
+  renderAll();
 }
 function ingestImage(img, name){
   const c = document.createElement('canvas');
@@ -1986,6 +2049,9 @@ function pushUndo(silent){
   if (S.undoStack.length > MAX_UNDO) S.undoStack.shift();
   S.redoStack.length = 0;
   if (!silent) syncButtons();
+  /* 每次真实改动都记一笔，并重新计时自动保存（攒到停手才写盘） */
+  S._dirtySeq = (S._dirtySeq || 0) + 1;
+  scheduleAutoSave();
 }
 let liveKey = null, nudgeT = 0, nudgeR = 0;
 function beginLive(key){ if (liveKey === key) return; liveKey = key; pushUndo(); }
@@ -2013,12 +2079,16 @@ function undo(){
   if (!S.undoStack.length) return;
   S.redoStack.push(snapshot());
   restore(S.undoStack.pop());
+  S._dirtySeq = (S._dirtySeq || 0) + 1;
+  scheduleAutoSave();
   renderAll();
 }
 function redo(){
   if (!S.redoStack.length) return;
   S.undoStack.push(snapshot());
   restore(S.redoStack.pop());
+  S._dirtySeq = (S._dirtySeq || 0) + 1;
+  scheduleAutoSave();
   renderAll();
 }
 
@@ -2334,13 +2404,18 @@ function makeSrcRow(){
       render(); renderLayerList();
     } }
   }, icon(S.showSrc ? 'i-eye' : 'i-eyeoff', 'ic-s'));
+  /* 删除源图层：清空画布回到「等待导入」，好换一张图重来 */
+  const del = h('span', {
+    class: 'del', title: '删除源图层（重新上传）',
+    on: { click: function(e){ e.stopPropagation(); removeSource(); } }
+  }, icon('i-trash', 'ic-s'));
 
-  const row = h('div', { class: 'li' },
+  const row = h('div', { class: 'li li-src' },
     thumb,
     h('span', { class: 'txt' },
       h('span', { class: 'nm src', text: '源图层' }),
       h('span', { class: 'meta', text: '原图 · ' + (S.showSrc ? '可见' : '已隐藏') })),
-    eye);
+    del, eye);
   row.addEventListener('click', function(){ setSel([]); renderAll(); });
   return row;
 }
@@ -4090,8 +4165,38 @@ async function saveToLibrary(silent){
   };
   try { await Store.put(rec); }
   catch (e){ if (!silent) toast('保存失败：' + (e.message || e)); return false; }
+  S._savedSeq = S._dirtySeq;          // 记下「这个版本已经落盘」
   if (!silent) toast('已保存到项目库：' + name);
   return true;
+}
+
+/* =========================================================
+   自动保存
+   ---------------------------------------------------------
+   编辑停下 AUTO_SAVE_MS 后静默存一次盘；没改动就不写。
+   开关在设置里（默认开），关掉之后这里一次都不会写 —— 连「回首页顺手存一次」
+   也走同一条闸门，不给「擅自保存」留后门。
+   ========================================================= */
+const AUTO_SAVE_MS = 2200;
+let autoSaveT = 0;
+function autoSaveOn(){ return settings.autoSave !== false; }
+function autoSaveCancel(){
+  if (autoSaveT){ clearTimeout(autoSaveT); autoSaveT = 0; }
+}
+/* 立刻存一次（仍然受开关约束）。返回是否真的写了盘。 */
+function autoSaveFlush(){
+  autoSaveCancel();
+  if (!autoSaveOn()) return false;
+  if (!S.src.canvas) return false;
+  if (S._savedSeq === S._dirtySeq) return false;
+  S._autoSaves = (S._autoSaves || 0) + 1;
+  saveToLibrary(true);
+  return true;
+}
+function scheduleAutoSave(){
+  if (!autoSaveOn()) return;
+  autoSaveCancel();
+  autoSaveT = setTimeout(function(){ autoSaveT = 0; autoSaveFlush(); }, AUTO_SAVE_MS);
 }
 
 function makeProjectCard(rec){
@@ -4149,7 +4254,7 @@ function enterEditor(){
   renderAll();
 }
 function goHome(){
-  if (S.src.canvas) saveToLibrary(true);
+  if (S.src.canvas) autoSaveFlush();      // 受自动保存开关约束；没改动不写
   const h = $('home');
   if (h) h.classList.add('show');
   renderHome();
@@ -4340,13 +4445,16 @@ function makeHubBridge(){
 const dsk = (window.desktop && dsk.isDesktop) ? window.desktop
           : (IN_HUB ? makeHubBridge() : null);
 const hasDesktop = !!dsk;
-let settings = { importDir:'', exportDir:'', projectDir:'' };
+/* autoSave 默认开：缺省即开，只有明确存过 false 才算关 */
+let settings = { importDir:'', exportDir:'', projectDir:'', autoSave:true };
 
 function renderSettings(){
   SET_KEYS.forEach(function(k){
     const el = $('set_' + k);
     if (el) el.value = settings[k] || '';
   });
+  const sw = $('set_autoSave');
+  if (sw) sw.checked = autoSaveOn();
   $('setNote').replaceChildren.apply($('setNote'), hasDesktop
     ? ['当前是', h('b', { text: '桌面版' }), '：可以把下面三项设成你常用的文件夹，之后导入 / 导出 / 存工程都会默认落到那里。']
     : ['当前是', h('b', { text: '网页版' }), '：受浏览器限制，下面三项无法影响系统对话框，建议用桌面版 ',
@@ -4356,10 +4464,17 @@ async function loadSettings(){
   try {
     if (hasDesktop){
       const s = await dsk.getSettings();
-      if (s) SET_KEYS.forEach(function(k){ if (typeof s[k] === 'string') settings[k] = s[k]; });
+      if (s){
+        SET_KEYS.forEach(function(k){ if (typeof s[k] === 'string') settings[k] = s[k]; });
+        if (typeof s.autoSave === 'boolean') settings.autoSave = s.autoSave;
+      }
     } else {
       const raw = localStorage.getItem('timeStretchSettings');
-      if (raw) SET_KEYS.forEach(function(k){ if (typeof JSON.parse(raw)[k] === 'string') settings[k] = JSON.parse(raw)[k]; });
+      const s = raw ? JSON.parse(raw) : null;
+      if (s){
+        SET_KEYS.forEach(function(k){ if (typeof s[k] === 'string') settings[k] = s[k]; });
+        if (typeof s.autoSave === 'boolean') settings.autoSave = s.autoSave;
+      }
     }
   } catch (_){}
   renderSettings();
@@ -4371,6 +4486,14 @@ async function persistSettings(){
   } catch (_){}
   renderSettings();
 }
+/* 自动保存开关：关掉的同时把已经排队的那次撤掉，避免「刚关就写了一次」 */
+$('set_autoSave').onchange = async function(){
+  settings.autoSave = !!this.checked;
+  if (!settings.autoSave) autoSaveCancel();
+  await persistSettings();
+  toast(settings.autoSave ? '自动保存已开启' : '自动保存已关闭：之后不会自动写盘');
+};
+
 document.querySelectorAll('#modalSettings [data-pick]').forEach(function(btn){
   btn.onclick = async function(){
     if (!hasDesktop){ toast('浏览器里没有系统目录对话框，请用桌面版或从合集打开'); return; }
@@ -4604,6 +4727,8 @@ window.__tool = {
       return true;
     }
   },
+  /* 自动保存：flush 走的是真实路径（受开关约束），自测靠它代替等 2.2 秒定时器 */
+  autoSave: { flush: autoSaveFlush, cancel: autoSaveCancel, enabled: autoSaveOn },
   ungroupSelected: ungroupSelected,
   setSel: setSel,
   selSet: selSet,

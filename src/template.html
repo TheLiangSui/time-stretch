@@ -224,6 +224,8 @@
       <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></td><td>复制 / 剪切 / 粘贴图层（连续粘贴自动错开）</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd></td><td>从系统剪贴板粘贴图片</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>原地复制一层 / 导入图片</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>保存到项目库 / 导出 .json 工程（开着自动保存时，改完停手就自动存）</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd> / <kbd>Ctrl</kbd>+<kbd>,</kbd></td><td>打开工程文件 / 设置</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>撤销 / 重做（焦点在参数框里也有效）</td></tr>
       <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>图层下沉 / 上浮</td></tr>
       <tr><td><kbd>Shift</kbd> / <kbd>Ctrl</kbd>+点击图层行</td><td>多选；<kbd>Shift</kbd> 是「从上次点的那行到这里」整段选</td></tr>
@@ -258,6 +260,14 @@
     <div class="cardm-body">
     <h3>设置</h3>
     <p class="sub-title">界面偏好与默认目录</p>
+    <div class="setrow" style="grid-template-columns:76px 1fr; margin-bottom:12px">
+      <label>自动保存</label>
+      <label class="switch" for="set_autoSave">
+        <input type="checkbox" id="set_autoSave" checked>
+        <span class="sw-track"><span class="sw-dot"></span></span>
+        <span class="sw-txt">改完停手约 2 秒自动存进项目库；关掉后不再自动写盘</span>
+      </label>
+    </div>
     <div class="setrow" style="grid-template-columns:76px 1fr; margin-bottom:10px">
       <label>数值调整</label>
       <div class="seg" id="segNumMode">

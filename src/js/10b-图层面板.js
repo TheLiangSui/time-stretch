@@ -182,13 +182,18 @@ function makeSrcRow(){
       render(); renderLayerList();
     } }
   }, icon(S.showSrc ? 'i-eye' : 'i-eyeoff', 'ic-s'));
+  /* 删除源图层：清空画布回到「等待导入」，好换一张图重来 */
+  const del = h('span', {
+    class: 'del', title: '删除源图层（重新上传）',
+    on: { click: function(e){ e.stopPropagation(); removeSource(); } }
+  }, icon('i-trash', 'ic-s'));
 
-  const row = h('div', { class: 'li' },
+  const row = h('div', { class: 'li li-src' },
     thumb,
     h('span', { class: 'txt' },
       h('span', { class: 'nm src', text: '源图层' }),
       h('span', { class: 'meta', text: '原图 · ' + (S.showSrc ? '可见' : '已隐藏') })),
-    eye);
+    del, eye);
   row.addEventListener('click', function(){ setSel([]); renderAll(); });
   return row;
 }

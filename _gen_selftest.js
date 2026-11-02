@@ -697,10 +697,13 @@ const BODY = `
       /* ---------- J7. 设置面板 ---------- */
       chk('设置按钮存在', !!document.getElementById('btnSettings'), true);
       chk('设置弹层存在', !!document.getElementById('modalSettings'), true);
-      chk('设置里五行（2 界面偏好 + 3 目录）', document.querySelectorAll('#modalSettings .setrow').length, 5);
+      chk('设置里六行（1 自动保存 + 2 界面偏好 + 3 目录）', document.querySelectorAll('#modalSettings .setrow').length, 6);
       var st = T.settings();
       chk('设置对象含三个目录键',
           ['importDir','exportDir','projectDir'].every(function(k){ return k in st; }), true);
+      chk('自动保存默认开启', st.autoSave, true);
+      chk('自动保存开关默认勾选', document.getElementById('set_autoSave').checked, true);
+      chk('开关有可见的滑块', !!document.querySelector('#modalSettings .switch .sw-track'), true);
       /* 浏览器版 isDesktop=false；打包版有 preload 注入的 window.desktop=true。
          这里断言两者一致，同一份测试就能同时跑在浏览器和 exe 里。 */
       var hasBridge = !!(window.desktop && window.desktop.isDesktop);
@@ -713,6 +716,37 @@ const BODY = `
       } else {
         R.push('PASS 浏览器版无需 IPC 接口');
       }
+
+      /* ---------- J7b. 自动保存闸门 ----------
+         关掉开关后必须一次都不写盘 —— 包括「编辑后静默存」和「回首页顺手存」。
+         这里用 autoSave.flush() 走真实路径，免得测试去等 2.2 秒定时器。 */
+      (function(){
+        try {
+          var sw = document.getElementById('set_autoSave');
+          var nAS = T.S._autoSaves;
+          var L0 = T.S.layers[0];
+          var bump = function(){
+            if (L0) L0.sat = (L0.sat === 7 ? 8 : 7);
+            T.pushUndo();
+          };
+
+          sw.checked = false;
+          sw.dispatchEvent(new Event('change', { bubbles:true }));
+          chk('关掉开关后设置立刻变 false', T.settings().autoSave, false);
+          chk('关掉后开关处于未勾选', sw.checked, false);
+          bump();
+          chk('关掉后 flush 明确报告「没写」', T.autoSave.flush(), false);
+          chk('关掉后自动保存计数不动', T.S._autoSaves, nAS);
+
+          sw.checked = true;
+          sw.dispatchEvent(new Event('change', { bubbles:true }));
+          chk('重新打开后设置变 true', T.settings().autoSave, true);
+          bump();
+          chk('开启后 flush 会写盘', T.autoSave.flush(), true);
+          chk('开启后自动保存计数 +1', T.S._autoSaves, nAS + 1);
+          T.autoSave.cancel();          // 别让定时器在后面的用例里突然写一条
+        } catch(e){ R.push('FAIL J7b 段异常: ' + (e && e.message)); }
+      })();
 
       /* ---------- J8. 智能框选确实已被移除 ---------- */
       chk('智能框选按钮已删除', document.getElementById('btnSmartBox'), 'null');
@@ -1510,8 +1544,45 @@ const BODY = `
         R.push('FAIL 项目库往返异常: ' + (e && e.message ? e.message : e));
       });
 
+      /* ---------- R. 删除源图层（放在最后：会把画布清空）---------- */
+      function runSourceTests(){
+        try {
+          T.home.enter(); T.render();
+          var srcRow = document.querySelector('#layerlist .li-src');
+          chk('源图层行存在', !!srcRow, true);
+          var delBtn = srcRow ? srcRow.querySelector('.del') : null;
+          chk('源图层行有删除按钮', !!delBtn, true);
+          if (!delBtn) return;
+
+          /* 取消 = 什么都不发生 */
+          var oldConfirm = window.confirm;
+          window.confirm = function(){ return false; };
+          var nBefore = T.S.layers.length, hadSrc = !!T.S.src.canvas;
+          delBtn.click();
+          chk('取消确认后源图还在', !!T.S.src.canvas, hadSrc);
+          chk('取消确认后图层没变', T.S.layers.length, nBefore);
+
+          /* 确认 = 连画布一起清空，回到等待导入 */
+          window.confirm = function(){ return true; };
+          delBtn.click();
+          window.confirm = oldConfirm;
+          chk('确认后源图被删除', T.S.src.canvas, null);
+          chk('确认后拉伸层清空', T.S.layers.length, 0);
+          chk('撤销栈一并清空（源图不在快照里）', T.S.undoStack.length, 0);
+          chk('导入提示重新出现', document.getElementById('hint').classList.contains('hide'), false);
+          chk('导出按钮变回禁用', document.getElementById('btnExport').disabled, true);
+          chk('源图信息回到未载入', document.getElementById('srcInfo').textContent, '未载入图片');
+          chk('图层区回到空状态', document.querySelector('#layerlist .li-src'), null);
+        } catch(e){ R.push('FAIL R 段异常: ' + (e && e.message)); }
+      }
+      /* 源图层测试放最后，而且要等项目库那条链跑完 —— 删掉源图之后
+         saveToLibrary 就没东西可存了 */
+      var finishAll = function(){
+        homeP.then(function(){ runSourceTests(); doneOnce(); });
+      };
+
       /* ---------- J9. 桌面版设置 IPC 往返（浏览器版跳过）---------- */
-      if (!hasBridge){ homeP.then(doneOnce); return; }
+      if (!hasBridge){ finishAll(); return; }
       var origSettings = JSON.parse(JSON.stringify(T.settings()));
       /* 用正斜杠路径，避免在生成器的模板字符串里被转义吃掉 */
       var TESTDIR_A = 'D:/__ts_test_dir_a__', TESTDIR_B = 'D:/__ts_test_dir_b__';
@@ -1530,11 +1601,11 @@ const BODY = `
             return (s2[k] || '') === (origSettings[k] || '');
           });
           R.push((same ? 'PASS' : 'FAIL') + ' 设置能恢复原状 got=' + JSON.stringify(s2));
-          homeP.then(doneOnce);
+          finishAll();
         })
         .catch(function(err){
           R.push('FAIL 桌面版设置 IPC 异常: ' + err.message);
-          homeP.then(doneOnce);
+          finishAll();
         });
 
      } catch (e2){ log('EXCEPTION_C', String(e2 && e2.stack || e2)); done(); }
