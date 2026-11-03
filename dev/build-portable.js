@@ -91,11 +91,21 @@ for (const f of APP_FILES){
   }
 }
 
-/* tools/ 可能有多个工具，用 robocopy 一次拷完 */
-const rc2 = spawnSync('robocopy', [path.join(ROOT, 'tools'), path.join(STAGE, 'tools'),
-  '/E', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'],
-  { encoding: 'utf8', windowsHide: true });
-if (rc2.status === null || rc2.status > 7) fail('复制 tools/ 失败: ' + (rc2.stdout || ''));
+/* tools/ 可能有多个工具。只收每个工具的「运行所需」——index.html 与图标。
+   工具目录里同时躺着源码工程（src/ dev/）、Electron 外壳和测试产物，那些不进发行包：
+   一来包会胖几 MB，二来 src/js/*.js 是中文文件名，塞进 zip 后在非中文系统解压会乱码。 */
+const KEEP_FILE = /^(index\.html|icon\.(ico|png|svg))$/i;
+const SKIP_DIR = new Set(['src', 'dev', 'node_modules', 'docs', 'dist']);
+function copyTools(src, dst){
+  fs.mkdirSync(dst, { recursive: true });
+  for (const name of fs.readdirSync(src)){
+    if (SKIP_DIR.has(name) || name.charAt(0) === '_') continue;
+    const s = path.join(src, name), d = path.join(dst, name);
+    if (fs.statSync(s).isDirectory()) copyTools(s, d);
+    else if (KEEP_FILE.test(name)) fs.copyFileSync(s, d);
+  }
+}
+copyTools(path.join(ROOT, 'tools'), path.join(STAGE, 'tools'));
 
 /* 默认 resources/app 里有原来那份 app.asar（指向 electron 的默认应用），清掉 */
 for (const junk of ['default_app.asar']){
