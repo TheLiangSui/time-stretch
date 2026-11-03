@@ -1,5 +1,6 @@
 /* 用本机 Edge 无头模式跑自测页，提取结果
- * 用法：node _run_selftest.js [目标html] [deviceScaleFactor]
+ * 用法：node dev/run-selftest.js [目标html] [deviceScaleFactor]
+ *   ＜目标html＞ 相对工程根（dev/ 的上一级），默认 _selftest.html
  *   第二个参数用于模拟 Windows 显示缩放（1.25 / 1.5 / 2），
  *   这是复现「框选位置不跟鼠标」那个 bug 的关键环境。 */
 const { spawnSync } = require('child_process');
@@ -10,7 +11,7 @@ const os = require('os');
 const EDGE = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const target = process.argv[2] || '_selftest.html';
 const scale  = process.argv[3] || '1';
-const fileUrl = require('url').pathToFileURL(path.join(__dirname, target)).href;
+const fileUrl = require('url').pathToFileURL(path.join(__dirname, '..', target)).href;
 const profile = path.join(os.tmpdir(), 'edge-selftest-' + Date.now());
 
 const args = [

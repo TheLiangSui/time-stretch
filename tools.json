@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "author": "TheLiangSui",
+  "updated": "2026-11-03",
+  "tools": [
+    {
+      "id": "anton-repponen",
+      "name": "Anton Repponen 风格化",
+      "tagline": "一条取样线，把照片拉成平面构成",
+      "desc": "框选一块区域，沿居中一列像素横向展开 —— 天空变成色带，楼群变成条纹。带方块感、乱序、间序、冷暖偏移、图片图层与图层合集。",
+      "author": "TheLiangSui",
+      "version": "3.0.0",
+      "status": "published",
+      "accent": "#0d99ff",
+      "pattern": "plain",
+      "icon": "stretch",
+      "entry": "tools/anton-repponen/index.html",
+      "source": "tools/anton-repponen/index.html",
+      "tags": ["像素拉伸", "平面构成", "海报"],
+      "repo": "https://github.com/TheLiangSui/time-stretch"
+    },
+    { "id": "slot-1", "placeholder": true, "status": "wip" },
+    { "id": "slot-2", "placeholder": true, "status": "wip" },
+    { "id": "slot-3", "placeholder": true, "status": "wip" }
+  ]
+}

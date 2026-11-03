@@ -1,13 +1,12 @@
 /*
- * 生成应用图标 icon.ico —— 不依赖任何图形库，手写 PNG + ICO 容器
- * 图案就是本工具自己的效果：两侧是横向拉伸色带，中间保留了窄窄的「主体」竖条
+ * 生成 icon.ico —— 不依赖图形库，手写 PNG + ICO 容器。
+ * 图案：四个色块拼成 2×2 —— 合集里有多个工具，颜色取自各工具的 accent。
  */
 const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-/* ---------- 最小 PNG 编码器 ---------- */
 function crc32(buf){
   let crc = 0xFFFFFFFF;
   for (let i = 0; i < buf.length; i++){
@@ -30,7 +29,7 @@ function encodePNG(w, h, rgba){
   const stride = w*4 + 1;
   const raw = Buffer.alloc(stride*h);
   for (let y = 0; y < h; y++){
-    raw[y*stride] = 0;                                  // filter = none
+    raw[y*stride] = 0;
     rgba.copy(raw, y*stride + 1, y*w*4, (y+1)*w*4);
   }
   return Buffer.concat([
@@ -41,48 +40,64 @@ function encodePNG(w, h, rgba){
   ]);
 }
 
-/* ---------- 画图案 ---------- */
-function lerp(a, b, u){ return a + (b - a)*u; }
+/* ---------- 图案 ---------- */
+const COLORS = [
+  [13, 153, 255],    // 蓝 · Anton Repponen
+  [139, 92, 246],    // 紫 · 渐变网格
+  [249, 115, 22],    // 橙 · 半调网点
+  [236, 72, 153]     // 粉 · 故障位移
+];
+
+/* 圆角矩形覆盖率：返回 0..1 的 alpha */
+function roundRectCov(x, y, left, top, w, h, r){
+  const cx = Math.min(Math.max(x, left + r), left + w - r);
+  const cy = Math.min(Math.max(y, top + r), top + h - r);
+  const d = Math.hypot(x - cx, y - cy);
+  if (x < left || x > left + w || y < top || y > top + h) return 0;
+  if (d <= r - 0.6) return 1;
+  if (d >= r + 0.6) return 0;
+  return (r + 0.6 - d) / 1.2;
+}
+
 function drawIcon(size){
   const buf = Buffer.alloc(size*size*4);
-  const stripW = Math.max(2, Math.round(size*0.19));
-  const sx0 = Math.round((size - stripW)/2), sx1 = sx0 + stripW;
-  const rad = size*0.17;
+  const R = size * 0.235;                       // 外圆角
+  const pad = Math.max(1.5, size * 0.135);
+  const gap = Math.max(1, size * 0.055);
+  const cell = (size - pad*2 - gap) / 2;
+  const cr = cell * 0.26;                       // 色块圆角
 
   for (let y = 0; y < size; y++){
-    const t = y/(size - 1);
-    let R, G, B;
-    if (t < 0.45){ const u = t/0.45;        R = lerp(27,201,u);  G = lerp(42,138,u);  B = lerp(74,94,u);  }
-    else if (t < 0.72){ const u = (t-0.45)/0.27; R = lerp(201,232,u); G = lerp(138,184,u); B = lerp(94,122,u); }
-    else { const u = (t-0.72)/0.28;         R = lerp(232,42,u);  G = lerp(184,34,u);  B = lerp(122,48,u); }
-
     for (let x = 0; x < size; x++){
-      let r = R, g = G, b = B;
-      if (x >= sx0 && x < sx1){                          // 中央「主体」竖条：提亮
-        r = Math.min(255, R*0.45 + 150);
-        g = Math.min(255, G*0.45 + 128);
-        b = Math.min(255, B*0.45 + 92);
-      }
+      const px = x + 0.5, py = y + 0.5;
       const i = (y*size + x)*4;
-      buf[i] = r; buf[i+1] = g; buf[i+2] = b; buf[i+3] = 255;
-    }
-  }
-  // 圆角
-  for (let y = 0; y < size; y++){
-    for (let x = 0; x < size; x++){
-      const dx = Math.min(x, size-1-x), dy = Math.min(y, size-1-y);
-      if (dx < rad && dy < rad){
-        const d = Math.hypot(rad - dx, rad - dy);
-        const i = (y*size + x)*4 + 3;
-        if (d > rad) buf[i] = 0;
-        else if (d > rad - 1.2) buf[i] = Math.round(255 * (rad - d) / 1.2);
+
+      // 底：#171717，带外圆角
+      const outer = roundRectCov(px, py, 0, 0, size, size, R);
+      if (outer <= 0){ buf[i+3] = 0; continue; }
+      let r = 23, g = 23, b = 23, a = outer;
+
+      // 四个色块
+      for (let k = 0; k < 4; k++){
+        const cx = pad + (k % 2) * (cell + gap);
+        const cy = pad + Math.floor(k / 2) * (cell + gap);
+        const cov = roundRectCov(px, py, cx, cy, cell, cell, cr);
+        if (cov > 0){
+          const c = COLORS[k];
+          r = Math.round(r * (1 - cov) + c[0] * cov);
+          g = Math.round(g * (1 - cov) + c[1] * cov);
+          b = Math.round(b * (1 - cov) + c[2] * cov);
+        }
       }
+
+      buf[i] = r; buf[i+1] = g; buf[i+2] = b;
+      buf[i+3] = Math.round(255 * a);
     }
   }
   return buf;
 }
 
-/* ---------- ICO 容器（内嵌 PNG，Vista+ 支持） ---------- */
+/* ---------- ICO 容器 ---------- */
 function buildICO(sizes){
   const pngs = sizes.map(function(s){
     return { s: s, data: encodePNG(s, s, drawIcon(s)) };
@@ -107,9 +122,7 @@ const SIZES = [16, 24, 32, 48, 64, 128, 256];
 const ico = buildICO(SIZES);
 fs.writeFileSync(path.join(__dirname, '..', 'icon.ico'), ico);
 
-/* 顺手在临时目录导一张 256 PNG，方便肉眼确认 */
-const prev = path.join(os.tmpdir(), 'repponen-demo', 'icon_preview.png');
-fs.mkdirSync(path.dirname(prev), { recursive: true });
+const prev = path.join(__dirname, '..', 'icon-preview.png');
 fs.writeFileSync(prev, encodePNG(256, 256, drawIcon(256)));
 
 console.log('icon.ico  ' + ico.length + ' bytes, ' + SIZES.length + ' sizes (' + SIZES.join('/') + ')');

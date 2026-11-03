@@ -1,12 +1,13 @@
 /*
  * 自测生成器 —— 把测试脚本注入 index.html 生成 _selftest.html
- * 用法：node _gen_selftest.js [broken]
+ * 用法：node dev/gen-selftest.js [broken]
  *   broken 模式把采样列强制改到矩形左边缘，用来验证测试本身能抓到错误
  */
 const fs = require('fs');
 const path = require('path');
 
-const dir = __dirname;
+/* 脚本在 dev/ 下，工程根是它的上一级 */
+const dir = path.join(__dirname, '..');
 const broken = process.argv[2] === 'broken';
 const dprBroken = process.argv[2] === 'dprbroken';
 

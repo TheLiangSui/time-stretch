@@ -1,6 +1,7 @@
 # 依赖与构建产物
 node_modules/
 dist/
+dist-web/
 
 # 开发期临时文件（自测页、调试页、测试素材）
 _*.html
@@ -8,11 +9,6 @@ _*.js
 _*.txt
 _bench/
 GonCeng/
-
-# 但自测工具是真正的开发依赖，npm run check 要用，别当成临时文件忽略掉
-!_gen_selftest.js
-!_run_selftest.js
-!_selftest_inject.js
 
 # 系统与编辑器
 Thumbs.db
