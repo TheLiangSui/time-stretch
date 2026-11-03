@@ -34,7 +34,7 @@
 | 形态 | 怎么用 | 说明 |
 |---|---|---|
 | 🌐 **网页版** | 打开 [theliangsui.github.io/time-stretch/tools/anton-repponen](https://theliangsui.github.io/time-stretch/tools/anton-repponen/) | 打开即用，不需要安装，不加载任何外部资源。也可以把 `tools/anton-repponen/index.html` 存到本地双击打开 |
-| 🖥 **Windows 桌面版** | 从 [Releases](https://github.com/TheLiangSui/time-stretch/releases/latest) 下载 zip → **解压整个文件夹** → 双击 exe | 免安装绿色版。多出原生「另存为」对话框、默认目录记忆、原生菜单 |
+| 🖥 **Windows 桌面版** | 从 [Releases](https://github.com/TheLiangSui/time-stretch/releases/latest) 下载 `StylizerHub-v3.0.0-win32-x64.zip` → **解压整个文件夹** → 双击 `StylizerHub.exe` | 免安装绿色版。打开是合集首页，点卡片进工具。多出原生「另存为」对话框、默认目录记忆、原生菜单 |
 
 > 桌面版**必须解压后整个文件夹放在一起**运行，exe 依赖同目录的 Electron 运行时，单独拖出来打不开。想放桌面就建快捷方式。
 >
